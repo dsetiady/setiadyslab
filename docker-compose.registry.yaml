@@ -13,6 +13,20 @@ services:
       - /home/dennysetiady/registry-auth:/auth:ro
     networks:
       - shared-network
+  
+  registry-ui:
+    image: joxit/docker-registry-ui:latest
+    container_name: registry-ui
+    restart: unless-stopped
+    environment:
+      - SINGLE_REGISTRY=true
+      - REGISTRY_TITLE=Setiady Labs Registry
+      - REGISTRY_URL=http://registry:5000
+      - DELETE_IMAGES=true
+    depends_on:
+      - registry
+    networks:
+      - shared-network
 
 volumes:
   registry_data:
