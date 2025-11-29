@@ -21,7 +21,7 @@ services:
     environment:
       - SINGLE_REGISTRY=true
       - REGISTRY_TITLE=Setiady Labs Registry
-      - REGISTRY_URL=http://registry:5000
+      - REGISTRY_URL=https://registry.setiady.com/
       - DELETE_IMAGES=true
     depends_on:
       - registry
