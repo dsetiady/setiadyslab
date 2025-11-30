@@ -1,0 +1,11 @@
+services:
+  sshwifty:
+    image: niruix/sshwifty:latest
+    container_name: sshwifty
+    restart: unless-stopped
+    networks:
+      - shared-network
+
+networks:
+  shared-network:
+    external: true
