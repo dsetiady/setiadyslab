@@ -3,6 +3,8 @@ services:
     image: niruix/sshwifty:latest
     container_name: sshwifty
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - shared-network
 
