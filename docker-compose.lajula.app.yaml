@@ -2,8 +2,6 @@ services:
   app:
     image: registry.setiady.com/lajuladotapp:v1.0.0
     container_name: lajuladotapp
-    ports:
-      - "80:80"
     restart: unless-stopped
     networks:
       - shared-network
