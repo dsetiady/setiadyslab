@@ -1,6 +1,6 @@
 services:
   app:
-    image: registry.setiady.com/lajula.app:v1.0.0
+    image: registry.setiady.com/lajuladotapp:v1.0.0
     container_name: lajuladotapp
     ports:
       - "80:80"
