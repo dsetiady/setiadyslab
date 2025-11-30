@@ -3,6 +3,8 @@ services:
     image: niruix/sshwifty:latest
     container_name: sshwifty
     restart: unless-stopped
+    environment:
+      - SSHWIFTY_SHAREDKEY=${SSHWIFTY_SHAREDKEY}
     extra_hosts:
       - "setiadyslabs:host-gateway"
     networks:
