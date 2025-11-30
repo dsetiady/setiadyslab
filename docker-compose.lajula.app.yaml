@@ -1,0 +1,7 @@
+services:
+  app:
+    image: registry.setiady.com/lajula.app:v1.0.0
+    container_name: lajula.app
+    ports:
+      - "80:80"
+    restart: unless-stopped
