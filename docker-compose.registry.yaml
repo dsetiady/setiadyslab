@@ -26,8 +26,9 @@ services:
     environment:
       - SINGLE_REGISTRY=true
       - REGISTRY_TITLE=Setiady Labs Registry
-      - REGISTRY_URL=https://registry.setiady.com/
+      - NGINX_PROXY_PASS_URL=http://registry:5000
       - DELETE_IMAGES=true
+      - SHOW_CONTENT_DIGEST=true
     depends_on:
       - registry
     networks:
