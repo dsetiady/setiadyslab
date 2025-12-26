@@ -3,6 +3,26 @@ services:
     image: registry.setiady.com/sugarradar/sucrose:latest
     container_name: sugarradar-sucrose
     restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
+      - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
+      - SPACES_REGION=${SPACES_REGION}
+      - SPACES_BUCKET=${SPACES_BUCKET}
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT}
+      - SPACES_CDN_URL=${SPACES_CDN_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - REDIS_ADDR=redis:6379
     depends_on:
       - postgres
       - redis
@@ -14,6 +34,26 @@ services:
     image: registry.setiady.com/sugarradar/sucrose-worker:latest
     container_name: sugarradar-sucrose-worker
     restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
+      - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
+      - SPACES_REGION=${SPACES_REGION}
+      - SPACES_BUCKET=${SPACES_BUCKET}
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT}
+      - SPACES_CDN_URL=${SPACES_CDN_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - REDIS_ADDR=${REDIS_ADDR}
     depends_on:
       - postgres
       - redis
@@ -24,6 +64,10 @@ services:
     image: postgres:16-alpine
     container_name: sugarradar-postgres
     restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -44,7 +88,7 @@ services:
     container_name: sugarradar-asynqmon
     restart: unless-stopped
     environment:
-      - REDIS_ADDR=redis:6379
+      - REDIS_ADDR=${REDIS_ADDR}
     depends_on:
       - redis
     networks:
