@@ -12,7 +12,7 @@ services:
 
   sucrose-worker:
     image: registry.setiady.com/sugarradar/sucrose-worker:latest
-    container_name: sugarradar-worker
+    container_name: sugarradar-sucrose-worker
     restart: unless-stopped
     depends_on:
       - postgres
