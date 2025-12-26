@@ -24,10 +24,6 @@ services:
     image: postgres:16-alpine
     container_name: sugarradar-postgres
     restart: unless-stopped
-    environment:
-      - POSTGRES_DB=sugarradar
-      - POSTGRES_USER=sugarradar
-      - POSTGRES_PASSWORD=sugarradar
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
