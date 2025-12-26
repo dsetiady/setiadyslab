@@ -1,24 +1,24 @@
 services:
-  sucrose:
-    image: registry.setiady.com/sugarradar/sucrose:latest
-    container_name: sugarradar-sucrose
-    restart: unless-stopped
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - shared-network
-      - sugarradar-internal
+  # sucrose:
+  #   image: registry.setiady.com/sugarradar/sucrose:latest
+  #   container_name: sugarradar-sucrose
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   networks:
+  #     - shared-network
+  #     - sugarradar-internal
 
-  sucrose-worker:
-    image: registry.setiady.com/sugarradar/sucrose-worker:latest
-    container_name: sugarradar-worker
-    restart: unless-stopped
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - sugarradar-internal
+  # sucrose-worker:
+  #   image: registry.setiady.com/sugarradar/sucrose-worker:latest
+  #   container_name: sugarradar-worker
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - postgres
+  #     - redis
+  #   networks:
+  #     - sugarradar-internal
 
   postgres:
     image: postgres:16-alpine
