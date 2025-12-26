@@ -44,7 +44,7 @@ services:
       - sugarradar-internal
 
   asynqmon:
-    image: hibiken/asynqmon:0.8.0
+    image: hibiken/asynqmon:0.7.2
     container_name: sugarradar-asynqmon
     restart: unless-stopped
     environment:
