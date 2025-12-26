@@ -1,0 +1,66 @@
+services:
+  sucrose:
+    image: registry.setiady.com/sugarradar/sucrose:latest
+    container_name: sugarradar-sucrose
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - shared-network
+      - sugarradar-internal
+
+  sucrose-worker:
+    image: registry.setiady.com/sugarradar/sucrose-worker:latest
+    container_name: sugarradar-worker
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - sugarradar-internal
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: sugarradar-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=sugarradar
+      - POSTGRES_USER=sugarradar
+      - POSTGRES_PASSWORD=sugarradar
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sugarradar-internal
+
+  redis:
+    image: redis:7-alpine
+    container_name: sugarradar-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - sugarradar-internal
+
+  asynqmon:
+    image: hibiken/asynqmon:0.8.0
+    container_name: sugarradar-asynqmon
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis:6379
+    depends_on:
+      - redis
+    networks:
+      - shared-network
+      - sugarradar-internal
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  shared-network:
+    external: true
+  sugarradar-internal:
+    driver: bridge
