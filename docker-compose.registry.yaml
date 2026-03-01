@@ -13,6 +13,8 @@ services:
       - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers=["Authorization","Accept","Cache-Control","Content-Type"]
       - REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers=["Docker-Content-Digest"]
       - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=[true]
+    ports:
+      - "127.0.0.1:5000:5000"
     volumes:
       - registry_data:/var/lib/registry
       - /home/dennysetiady/registry-auth:/auth:ro

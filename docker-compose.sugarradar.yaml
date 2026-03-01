@@ -1,6 +1,6 @@
 services:
   sucrose:
-    image: registry.setiady.com/sugarradar/sucrose:latest
+    image: localhost:5000/sugarradar/sucrose:0.0.1
     container_name: sugarradar-sucrose
     restart: unless-stopped
     environment:
@@ -39,7 +39,7 @@ services:
       - sugarradar-internal
 
   sucrose-worker:
-    image: registry.setiady.com/sugarradar/sucrose-worker:latest
+    image: localhost:5000/sugarradar/sucrose-worker:0.0.1
     container_name: sugarradar-sucrose-worker
     restart: unless-stopped
     environment:
