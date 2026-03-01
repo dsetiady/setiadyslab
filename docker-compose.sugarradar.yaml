@@ -1,6 +1,6 @@
 services:
   sucrose:
-    image: localhost:5000/sugarradar/sucrose:0.0.1
+    image: localhost:5000/sugarradar/sucrose:latest
     container_name: sugarradar-sucrose
     restart: unless-stopped
     environment:
@@ -39,7 +39,7 @@ services:
       - sugarradar-internal
 
   sucrose-worker:
-    image: localhost:5000/sugarradar/sucrose-worker:0.0.1
+    image: localhost:5000/sugarradar/sucrose-worker:latest
     container_name: sugarradar-sucrose-worker
     restart: unless-stopped
     environment:
