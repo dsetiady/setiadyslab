@@ -32,8 +32,10 @@ services:
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - shared-network
       - sugarradar-internal
@@ -71,8 +73,10 @@ services:
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_healthy
     networks:
       - sugarradar-internal
 
@@ -94,6 +98,11 @@ services:
     container_name: sugarradar-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     volumes:
       - redis_data:/data
     networks:
