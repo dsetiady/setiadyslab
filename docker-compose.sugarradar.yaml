@@ -131,6 +131,14 @@ services:
       - shared-network
       - sugarradar-internal
 
+  glucose:
+    image: localhost:5000/sugarradar/glucose:latest
+    container_name: sugarradar-glucose
+    restart: unless-stopped
+    networks:
+      - shared-network
+      - sugarradar-internal
+
   asynqmon:
     image: hibiken/asynqmon:0.7.2
     container_name: sugarradar-asynqmon
