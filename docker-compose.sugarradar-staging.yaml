@@ -1,7 +1,7 @@
 services:
   sugarradar-staging-sucrose:
     image: localhost:5000/sugarradar/sucrose:latest
-    container_name: sugarradar-sucrose
+    container_name: sugarradar-staging-sucrose
     restart: unless-stopped
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
