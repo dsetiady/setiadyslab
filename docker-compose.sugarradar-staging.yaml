@@ -131,7 +131,7 @@ services:
 
   sugarradar-staging-postgres:
     image: postgres:16-alpine
-    container_name: sugarradar-postgres
+    container_name: sugarradar-staging-postgres
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -150,7 +150,7 @@ services:
 
   sugarradar-staging-redis:
     image: redis:7-alpine
-    container_name: sugarradar-redis
+    container_name: sugarradar-staging-redis
     restart: unless-stopped
     command: redis-server --appendonly yes
     healthcheck:
@@ -166,7 +166,7 @@ services:
   sugarradar-staging-adminer:
     image: adminer:4
     platform: linux/amd64
-    container_name: sugarradar-adminer
+    container_name: sugarradar-staging-adminer
     restart: unless-stopped
     environment:
       - ADMINER_DEFAULT_SERVER=sugarradar-staging-postgres
