@@ -9,11 +9,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_ADDR=${REDIS_ADDR}
       - AI_PROVIDER=${AI_PROVIDER}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - MAX_BONUS_SCANS_PER_DAY=${MAX_BONUS_SCANS_PER_DAY}
       - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
       - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
       - SPACES_REGION=${SPACES_REGION}
@@ -22,7 +24,6 @@ services:
       - SPACES_CDN_URL=${SPACES_CDN_URL}
       - LOG_LEVEL=${LOG_LEVEL}
       - LOG_FORMAT=${LOG_FORMAT}
-      - REDIS_ADDR=redis:6379
       - GOOGLE_CLIENT_IDS=${GOOGLE_CLIENT_IDS}
       - REVENUECAT_SECRET_KEY=${REVENUECAT_SECRET_KEY}
       - REVENUECAT_PROJECT_ID=${REVENUECAT_PROJECT_ID}
@@ -31,10 +32,12 @@ services:
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
     depends_on:
-      postgres:
-        condition: service_started
-      redis:
+      sugarradar-staging-postgres:
+        condition: service_healthy
+      sugarradar-staging-redis:
         condition: service_healthy
     networks:
       - shared-network
@@ -50,11 +53,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_ADDR=${REDIS_ADDR}
       - AI_PROVIDER=${AI_PROVIDER}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - MAX_BONUS_SCANS_PER_DAY=${MAX_BONUS_SCANS_PER_DAY}
       - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
       - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
       - SPACES_REGION=${SPACES_REGION}
@@ -63,7 +68,6 @@ services:
       - SPACES_CDN_URL=${SPACES_CDN_URL}
       - LOG_LEVEL=${LOG_LEVEL}
       - LOG_FORMAT=${LOG_FORMAT}
-      - REDIS_ADDR=${REDIS_ADDR}
       - GOOGLE_CLIENT_IDS=${GOOGLE_CLIENT_IDS}
       - REVENUECAT_SECRET_KEY=${REVENUECAT_SECRET_KEY}
       - REVENUECAT_PROJECT_ID=${REVENUECAT_PROJECT_ID}
@@ -72,10 +76,55 @@ services:
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
     depends_on:
-      postgres:
-        condition: service_started
-      redis:
+      sugarradar-staging-postgres:
+        condition: service_healthy
+      sugarradar-staging-redis:
+        condition: service_healthy
+    networks:
+      - sugarradar-internal
+
+  sugarradar-staging-sucrose-scheduler:
+    image: localhost:5000/sugarradar/sucrose-scheduler:latest
+    container_name: sugarradar-sucrose-scheduler
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - MAX_BONUS_SCANS_PER_DAY=${MAX_BONUS_SCANS_PER_DAY}
+      - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
+      - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
+      - SPACES_REGION=${SPACES_REGION}
+      - SPACES_BUCKET=${SPACES_BUCKET}
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT}
+      - SPACES_CDN_URL=${SPACES_CDN_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - GOOGLE_CLIENT_IDS=${GOOGLE_CLIENT_IDS}
+      - REVENUECAT_SECRET_KEY=${REVENUECAT_SECRET_KEY}
+      - REVENUECAT_PROJECT_ID=${REVENUECAT_PROJECT_ID}
+      - REVENUECAT_ENTITLEMENT_ID=${REVENUECAT_ENTITLEMENT_ID}
+      - REVENUECAT_SYNC_COOLDOWN_SECONDS=${REVENUECAT_SYNC_COOLDOWN_SECONDS}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    depends_on:
+      sugarradar-staging-postgres:
+        condition: service_healthy
+      sugarradar-staging-redis:
         condition: service_healthy
     networks:
       - sugarradar-internal
@@ -90,6 +139,12 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - sugarradar-staging-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - sugarradar-internal
 
