@@ -1,0 +1,44 @@
+services:
+  registry:
+    image: registry:2
+    container_name: registry
+    restart: unless-stopped
+    environment:
+      - REGISTRY_AUTH=htpasswd
+      - REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm
+      - REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd
+      - REGISTRY_STORAGE_DELETE_ENABLED=true
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Origin=["https://registry-ui.setiady.com"]
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Methods=["HEAD","GET","OPTIONS","DELETE","PUT","POST"]
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Headers=["Authorization","Accept","Cache-Control","Content-Type"]
+      - REGISTRY_HTTP_HEADERS_Access-Control-Expose-Headers=["Docker-Content-Digest"]
+      - REGISTRY_HTTP_HEADERS_Access-Control-Allow-Credentials=[true]
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - registry_data:/var/lib/registry
+      - /home/dennysetiady/registry-auth:/auth:ro
+    networks:
+      - shared-network
+  
+  registry-ui:
+    image: joxit/docker-registry-ui:latest
+    container_name: registry-ui
+    restart: unless-stopped
+    environment:
+      - SINGLE_REGISTRY=true
+      - REGISTRY_TITLE=Setiady Labs Registry
+      - NGINX_PROXY_PASS_URL=http://registry:5000
+      - DELETE_IMAGES=true
+      - SHOW_CONTENT_DIGEST=true
+    depends_on:
+      - registry
+    networks:
+      - shared-network
+
+volumes:
+  registry_data:
+
+networks:
+  shared-network:
+    external: true
