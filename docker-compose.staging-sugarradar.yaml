@@ -1,5 +1,5 @@
 services:
-  sucrose:
+  sugarradar-staging-sucrose:
     image: localhost:5000/sugarradar/sucrose:latest
     container_name: sugarradar-sucrose
     restart: unless-stopped
@@ -40,7 +40,7 @@ services:
       - shared-network
       - sugarradar-internal
 
-  sucrose-worker:
+  sugarradar-staging-sucrose-worker:
     image: localhost:5000/sugarradar/sucrose-worker:latest
     container_name: sugarradar-sucrose-worker
     restart: unless-stopped
@@ -80,7 +80,7 @@ services:
     networks:
       - sugarradar-internal
 
-  postgres:
+  sugarradar-staging-postgres:
     image: postgres:16-alpine
     container_name: sugarradar-postgres
     restart: unless-stopped
@@ -89,11 +89,11 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - sugarradar-staging-postgres-data:/var/lib/postgresql/data
     networks:
       - sugarradar-internal
 
-  redis:
+  sugarradar-staging-redis:
     image: redis:7-alpine
     container_name: sugarradar-redis
     restart: unless-stopped
@@ -104,57 +104,57 @@ services:
       timeout: 3s
       retries: 5
     volumes:
-      - redis_data:/data
+      - sugarradar-staging-redis-data:/data
     networks:
       - sugarradar-internal
 
-  adminer:
+  sugarradar-staging-adminer:
     image: adminer:4
     platform: linux/amd64
     container_name: sugarradar-adminer
     restart: unless-stopped
     environment:
-      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DEFAULT_SERVER=sugarradar-staging-postgres
     depends_on:
-      - postgres
+      - sugarradar-staging-postgres
     networks:
       - shared-network
       - sugarradar-internal
 
-  mailpit:
+  sugarradar-staging-mailpit:
     image: axllent/mailpit:latest
-    container_name: sugarradar-mailpit
+    container_name: sugarradar-staging-mailpit
     restart: unless-stopped
     volumes:
-      - mailpit_data:/data
+      - sugarradar-staging-mailpit-data:/data
     networks:
       - shared-network
       - sugarradar-internal
 
-  glucose:
+  sugarradar-staging-glucose:
     image: localhost:5000/sugarradar/glucose:latest
-    container_name: sugarradar-glucose
+    container_name: sugarradar-staging-glucose
     restart: unless-stopped
     networks:
       - shared-network
       - sugarradar-internal
 
-  asynqmon:
+  sugarradar-staging-asynqmon:
     image: hibiken/asynqmon:0.7.2
-    container_name: sugarradar-asynqmon
+    container_name: sugarradar-staging-asynqmon
     restart: unless-stopped
     environment:
       - REDIS_ADDR=${REDIS_ADDR}
     depends_on:
-      - redis
+      - sugarradar-staging-redis
     networks:
       - shared-network
       - sugarradar-internal
 
 volumes:
-  postgres_data:
-  redis_data:
-  mailpit_data:
+  sugarradar-staging-postgres-data:
+  sugarradar-staging-redis-data:
+  sugarradar-staging-mailpit-data:
 
 networks:
   shared-network:
