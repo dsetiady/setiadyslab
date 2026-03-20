@@ -39,10 +39,11 @@ services:
     volumes:
       - gitea_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gitea"]
+      test: ["CMD-SHELL", "pg_isready -U gitea -d gitea"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     networks:
       - shared-network
 
