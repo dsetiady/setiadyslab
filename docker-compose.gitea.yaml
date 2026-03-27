@@ -1,8 +1,6 @@
 services:
   gitea:
     image: gitea/gitea:latest
-    container_name: gitea
-    restart: unless-stopped
     environment:
       - USER_UID=1000
       - USER_GID=1000
@@ -16,22 +14,25 @@ services:
       - GITEA__server__HTTP_PORT=3000
       - GITEA__packages__ENABLED=true
     ports:
-      - "127.0.0.1:3000:3000"
-      - "127.0.0.1:2222:22"
+      - "3000:3000"
+      - "2222:22"
     volumes:
       - gitea_data:/data
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    depends_on:
-      gitea-db:
-        condition: service_healthy
     networks:
       - shared-network
+      - gitea-internal
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+      restart_policy:
+        condition: any
 
   gitea-db:
     image: postgres:16-alpine
-    container_name: gitea-db
-    restart: unless-stopped
     environment:
       - POSTGRES_DB=gitea
       - POSTGRES_USER=gitea
@@ -45,7 +46,12 @@ services:
       retries: 10
       start_period: 30s
     networks:
-      - shared-network
+      - gitea-internal
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
 
 volumes:
   gitea_data:
@@ -54,3 +60,5 @@ volumes:
 networks:
   shared-network:
     external: true
+  gitea-internal:
+    driver: overlay
