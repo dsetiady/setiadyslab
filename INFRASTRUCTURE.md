@@ -68,7 +68,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 1025      | 1025           | `mailpit` SMTP                        | mailpit            |
 | 9443      | 9443           | `portainer` (localhost only)          | portainer          |
 | 8000      | 8080           | `sugarradar-staging-sucrose` API      | sugarradar-staging |
-| 8001      | 5173           | `sugarradar-staging-glucose` frontend | sugarradar-staging |
+| 8001      | 80             | `sugarradar-staging-glucose` frontend | sugarradar-staging |
 | 8002      | 3000           | `sugarradar-staging-dbgate` DB admin  | sugarradar-staging |
 | 8003      | 8080           | `sugarradar-staging-asynqmon`         | sugarradar-staging |
 

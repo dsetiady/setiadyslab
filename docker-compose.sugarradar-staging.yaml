@@ -191,7 +191,7 @@ services:
     container_name: sugarradar-staging-glucose
     restart: unless-stopped
     ports:
-      - "8001:5173"
+      - "8001:80"
     networks:
       - shared-network
       - sugarradar-internal
