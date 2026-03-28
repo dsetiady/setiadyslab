@@ -1,6 +1,6 @@
 services:
   sugarradar-staging-sucrose:
-    image: localhost:5000/sugarradar/sucrose:latest
+    image: localhost:3000/sugarradar/sucrose:latest
     container_name: sugarradar-staging-sucrose
     restart: unless-stopped
     environment:
@@ -44,7 +44,7 @@ services:
       - sugarradar-internal
 
   sugarradar-staging-sucrose-worker:
-    image: localhost:5000/sugarradar/sucrose-worker:latest
+    image: localhost:3000/sugarradar/sucrose-worker:latest
     container_name: sugarradar-sucrose-worker
     restart: unless-stopped
     environment:
@@ -87,7 +87,7 @@ services:
       - sugarradar-internal
 
   sugarradar-staging-sucrose-scheduler:
-    image: localhost:5000/sugarradar/sucrose-scheduler:latest
+    image: localhost:3000/sugarradar/sucrose-scheduler:latest
     container_name: sugarradar-sucrose-scheduler
     restart: unless-stopped
     environment:
@@ -199,7 +199,7 @@ services:
       - sugarradar-internal
 
   sugarradar-staging-glucose:
-    image: localhost:5000/sugarradar/glucose:latest
+    image: localhost:3000/sugarradar/glucose:latest
     container_name: sugarradar-staging-glucose
     restart: unless-stopped
     networks:
