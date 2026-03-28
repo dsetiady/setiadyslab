@@ -188,12 +188,12 @@ Full staging environment for the SugarRadar app.
 
 #### Cloudflare Routes
 
-| Hostname                    | URL              | Service          |
-|-----------------------------|------------------|------------------|
-| `staging-api.setiady.com`   | `localhost:8000` | sucrose API      |
-| `staging.setiady.com`       | `localhost:8001` | glucose frontend |
-| `staging-db.setiady.com`    | `localhost:8002` | dbgate           |
-| `staging-queue.setiady.com` | `localhost:8003` | asynqmon         |
+| Hostname                           | URL              | Service          |
+|------------------------------------|------------------|------------------|
+| `staging-sucrose.sugarradar.com`   | `localhost:8000` | sucrose API      |
+| `staging-glucose.sugarradar.com`   | `localhost:8001` | glucose frontend |
+| `staging-dbgate.sugarradar.com`    | `localhost:8002` | dbgate           |
+| `staging-asynqmon.sugarradar.com`  | `localhost:8003` | asynqmon         |
 
 #### Key Env Vars
 
