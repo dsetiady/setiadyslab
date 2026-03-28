@@ -47,19 +47,30 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 
 ## Port Glossary
 
+### Port Range Scheme
+
+| Range     | Owner                                                        |
+|-----------|--------------------------------------------------------------|
+| 1025      | mailpit SMTP (special case — standard dev SMTP port)         |
+| 2222      | gitea SSH (special case — standard containerized git SSH)    |
+| 3000–3099 | Infrastructure services                                      |
+| 8000–8099 | SugarRadar Staging                                           |
+| 8100–8199 | SugarRadar Production *(reserved)*                           |
+| 9000–9099 | Ops tools *(portainer stays at 9443 — standard portainer port)* |
+
 ### Host-Exposed Ports
 
-| Host Port | Container Port | Service                                | Stack              |
-|-----------|----------------|----------------------------------------|--------------------|
-| 3000      | 3000           | `gitea`                                | gitea              |
-| 2222      | 22             | `gitea` SSH                            | gitea              |
-| 9443      | 9443           | `portainer` (localhost only)           | portainer          |
-| 8080      | 8080           | `sugarradar-staging-sucrose` API       | sugarradar-staging |
-| 5173      | 5173           | `sugarradar-staging-glucose` frontend  | sugarradar-staging |
-| 8025      | 8025           | `sugarradar-staging-mailpit` web UI    | sugarradar-staging |
-| 1025      | 1025           | `sugarradar-staging-mailpit` SMTP      | sugarradar-staging |
-| 8082      | 8080           | `sugarradar-staging-asynqmon` queue UI | sugarradar-staging |
-| 3001      | 3000           | `sugarradar-staging-dbgate` DB admin   | sugarradar-staging |
+| Host Port | Container Port | Service                               | Stack              |
+|-----------|----------------|---------------------------------------|--------------------|
+| 2222      | 22             | `gitea` SSH                           | gitea              |
+| 3000      | 3000           | `gitea`                               | gitea              |
+| 3025      | 8025           | `mailpit` web UI                      | mailpit            |
+| 1025      | 1025           | `mailpit` SMTP                        | mailpit            |
+| 9443      | 9443           | `portainer` (localhost only)          | portainer          |
+| 8000      | 8080           | `sugarradar-staging-sucrose` API      | sugarradar-staging |
+| 8001      | 5173           | `sugarradar-staging-glucose` frontend | sugarradar-staging |
+| 8002      | 3000           | `sugarradar-staging-dbgate` DB admin  | sugarradar-staging |
+| 8003      | 8080           | `sugarradar-staging-asynqmon`         | sugarradar-staging |
 
 ### Internal-Only (no host binding)
 
@@ -102,7 +113,25 @@ Cloudflare route: `gitea.setiady.com` → `localhost:3000`
 
 ---
 
-### 3. Glances (standalone container)
+### 3. Mailpit (`docker-compose.mailpit.yaml`)
+
+Shared SMTP mail catcher for all app stacks in development/staging. Any service on `shared-network` can send mail to `mailpit:1025`.
+
+| Container | Image                    | Network          | Notes                    |
+|-----------|--------------------------|------------------|--------------------------|
+| `mailpit` | `axllent/mailpit:latest` | `shared-network` | Web :3025, SMTP :1025    |
+
+Cloudflare route: `mail.setiady.com` → `localhost:3025`
+
+**Usage in app stacks:**
+```
+SMTP_HOST=mailpit
+SMTP_PORT=1025
+```
+
+---
+
+### 4. Glances (standalone container)
 
 System monitoring. Not a Swarm stack — requires `--pid host` and `--privileged` which Swarm does not support.
 
@@ -121,7 +150,7 @@ Cloudflare route: `glances.setiady.com` → `http://glances:61208` (via shared-n
 
 ---
 
-### 4. lajula.app (`docker-compose.lajula.app.yaml`)
+### 5. lajula.app (`docker-compose.lajula.app.yaml`)
 
 | Container      | Image                                      | Network          |
 |----------------|--------------------------------------------|------------------|
@@ -131,7 +160,7 @@ Cloudflare route: `lajula.app` → `http://lajuladotapp:<port>` (via shared-netw
 
 ---
 
-### 5. SugarRadar Staging (`docker-compose.sugarradar-staging.yaml`)
+### 6. SugarRadar Staging (`docker-compose.sugarradar-staging.yaml`)
 
 Full staging environment for the SugarRadar app.
 
@@ -139,15 +168,14 @@ Full staging environment for the SugarRadar app.
 
 | Container                      | Image                                                | Network(s)                              | Port (host) |
 |--------------------------------|------------------------------------------------------|-----------------------------------------|-------------|
-| `sugarradar-staging-sucrose`   | `localhost:3000/sugarradar/sucrose:latest`           | `shared-network`, `sugarradar-internal` | 8080        |
+| `sugarradar-staging-sucrose`   | `localhost:3000/sugarradar/sucrose:latest`           | `shared-network`, `sugarradar-internal` | 8000        |
 | `sugarradar-sucrose-worker`    | `localhost:3000/sugarradar/sucrose-worker:latest`    | `sugarradar-internal`                   | —           |
 | `sugarradar-sucrose-scheduler` | `localhost:3000/sugarradar/sucrose-scheduler:latest` | `sugarradar-internal`                   | —           |
-| `sugarradar-staging-glucose`   | `localhost:3000/sugarradar/glucose:latest`           | `shared-network`, `sugarradar-internal` | 5173        |
+| `sugarradar-staging-glucose`   | `localhost:3000/sugarradar/glucose:latest`           | `shared-network`, `sugarradar-internal` | 8001        |
 | `sugarradar-staging-postgres`  | `postgres:16-alpine`                                 | `sugarradar-internal`                   | —           |
 | `sugarradar-staging-redis`     | `redis:7-alpine`                                     | `sugarradar-internal`                   | —           |
-| `sugarradar-staging-dbgate`    | `dbgate/dbgate:latest`                               | `shared-network`, `sugarradar-internal` | 3001        |
-| `sugarradar-staging-mailpit`   | `axllent/mailpit:latest`                             | `shared-network`, `sugarradar-internal` | 8025, 1025  |
-| `sugarradar-staging-asynqmon`  | `hibiken/asynqmon:0.7.2`                             | `shared-network`, `sugarradar-internal` | 8082        |
+| `sugarradar-staging-dbgate`    | `dbgate/dbgate:latest`                               | `shared-network`, `sugarradar-internal` | 8002        |
+| `sugarradar-staging-asynqmon`  | `hibiken/asynqmon:0.7.2`                             | `shared-network`, `sugarradar-internal` | 8003        |
 
 #### Service Roles
 
@@ -156,18 +184,16 @@ Full staging environment for the SugarRadar app.
 - **sucrose-scheduler** — Periodic task scheduler
 - **glucose** — Frontend (Vite/React)
 - **dbgate** — Database + Redis admin UI
-- **mailpit** — SMTP mail catcher for staging emails
 - **asynqmon** — Asynq queue monitor UI
 
 #### Cloudflare Routes
 
 | Hostname                    | URL              | Service          |
 |-----------------------------|------------------|------------------|
-| `staging-api.setiady.com`   | `localhost:8080` | sucrose API      |
-| `staging.setiady.com`       | `localhost:5173` | glucose frontend |
-| `staging-mail.setiady.com`  | `localhost:8025` | mailpit UI       |
-| `staging-queue.setiady.com` | `localhost:8082` | asynqmon         |
-| `staging-db.setiady.com`    | `localhost:3001` | dbgate           |
+| `staging-api.setiady.com`   | `localhost:8000` | sucrose API      |
+| `staging.setiady.com`       | `localhost:8001` | glucose frontend |
+| `staging-db.setiady.com`    | `localhost:8002` | dbgate           |
+| `staging-queue.setiady.com` | `localhost:8003` | asynqmon         |
 
 #### Key Env Vars
 
@@ -177,7 +203,7 @@ Full staging environment for the SugarRadar app.
 | `POSTGRES_PORT` | `5432`                          |                                         |
 | `POSTGRES_DB`   | `sugarradar`                    |                                         |
 | `REDIS_ADDR`    | `sugarradar-staging-redis:6379` | Must use container name                 |
-| `SMTP_HOST`     | `sugarradar-staging-mailpit`    |                                         |
+| `SMTP_HOST`     | `mailpit`                       | Shared mailpit on `shared-network`      |
 | `SMTP_PORT`     | `1025`                          |                                         |
 | `AI_PROVIDER`   | `gemini`                        |                                         |
 | `SPACES_REGION` | `sgp1`                          | DigitalOcean Spaces                     |
@@ -192,6 +218,7 @@ Full staging environment for the SugarRadar app.
 | Portainer     | `https://portainer.setiady.com` | Stack management             |
 | Gitea         | `https://gitea.setiady.com`     | Git + registry               |
 | Glances       | `https://glances.setiady.com`   | System monitoring            |
+| Mailpit       | `https://mail.setiady.com`      | Shared dev mail UI           |
 
 **Laptop SSH config (`~/.ssh/config`):**
 ```
@@ -210,7 +237,7 @@ When setting up from scratch, deploy in this order:
 2. Create shared-network: `docker network create --driver overlay --attachable shared-network`
 3. Deploy **portainer** → connect to shared-network
 4. Deploy **gitea** (registry needed for custom images)
-5. Deploy **glances** (standalone `docker run`)
-6. Deploy **lajula.app**
-7. Deploy **sugarradar-staging**
-
+5. Deploy **mailpit**
+6. Deploy **glances** (standalone `docker run`)
+7. Deploy **lajula.app**
+8. Deploy **sugarradar-staging**

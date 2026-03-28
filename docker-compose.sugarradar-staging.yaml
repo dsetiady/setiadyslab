@@ -3,6 +3,8 @@ services:
     image: localhost:3000/sugarradar/sucrose:latest
     container_name: sugarradar-staging-sucrose
     restart: unless-stopped
+    ports:
+      - "8000:8080"
     environment:
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
@@ -161,6 +163,8 @@ services:
     image: dbgate/dbgate:latest
     container_name: sugarradar-staging-dbgate
     restart: unless-stopped
+    ports:
+      - "8002:3000"
     environment:
       - CONNECTIONS=pg1,redis1
 
@@ -182,20 +186,12 @@ services:
       - shared-network
       - sugarradar-internal
 
-  sugarradar-staging-mailpit:
-    image: axllent/mailpit:latest
-    container_name: sugarradar-staging-mailpit
-    restart: unless-stopped
-    volumes:
-      - sugarradar-staging-mailpit-data:/data
-    networks:
-      - shared-network
-      - sugarradar-internal
-
   sugarradar-staging-glucose:
     image: localhost:3000/sugarradar/glucose:latest
     container_name: sugarradar-staging-glucose
     restart: unless-stopped
+    ports:
+      - "8001:5173"
     networks:
       - shared-network
       - sugarradar-internal
@@ -204,6 +200,8 @@ services:
     image: hibiken/asynqmon:0.7.2
     container_name: sugarradar-staging-asynqmon
     restart: unless-stopped
+    ports:
+      - "8003:8080"
     environment:
       - REDIS_ADDR=${REDIS_ADDR}
     depends_on:
@@ -215,7 +213,6 @@ services:
 volumes:
   sugarradar-staging-postgres-data:
   sugarradar-staging-redis-data:
-  sugarradar-staging-mailpit-data:
 
 networks:
   shared-network:
