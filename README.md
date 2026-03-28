@@ -5,7 +5,6 @@ Docker Swarm homelab running on a single Intel NUC, managed via Portainer. All e
 ## Docs
 
 - [`INFRASTRUCTURE.md`](INFRASTRUCTURE.md) — Full stack reference: services, ports, networks, Cloudflare routes
-- [`RESETUP.md`](RESETUP.md) — Disaster recovery procedure (network migrations, full resetup)
 
 ## Stacks
 

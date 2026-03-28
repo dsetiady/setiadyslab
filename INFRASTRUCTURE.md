@@ -214,4 +214,3 @@ When setting up from scratch, deploy in this order:
 6. Deploy **lajula.app**
 7. Deploy **sugarradar-staging**
 
-> See `RESETUP.md` for the full disaster recovery procedure.
