@@ -35,10 +35,8 @@ services:
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
     depends_on:
-      sugarradar-staging-postgres:
-        condition: service_healthy
-      sugarradar-staging-redis:
-        condition: service_healthy
+      - sugarradar-staging-postgres
+      - sugarradar-staging-redis
     networks:
       - shared-network
       - sugarradar-internal
@@ -79,10 +77,8 @@ services:
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
     depends_on:
-      sugarradar-staging-postgres:
-        condition: service_healthy
-      sugarradar-staging-redis:
-        condition: service_healthy
+      - sugarradar-staging-postgres
+      - sugarradar-staging-redis
     networks:
       - sugarradar-internal
 
@@ -122,10 +118,8 @@ services:
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
     depends_on:
-      sugarradar-staging-postgres:
-        condition: service_healthy
-      sugarradar-staging-redis:
-        condition: service_healthy
+      - sugarradar-staging-postgres
+      - sugarradar-staging-redis
     networks:
       - sugarradar-internal
 
