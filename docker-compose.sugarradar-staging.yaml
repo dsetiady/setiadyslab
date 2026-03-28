@@ -163,15 +163,27 @@ services:
     networks:
       - sugarradar-internal
 
-  sugarradar-staging-adminer:
-    image: adminer:4
-    platform: linux/amd64
-    container_name: sugarradar-staging-adminer
+  sugarradar-staging-dbgate:
+    image: dbgate/dbgate:latest
+    container_name: sugarradar-staging-dbgate
     restart: unless-stopped
     environment:
-      - ADMINER_DEFAULT_SERVER=sugarradar-staging-postgres
+      - CONNECTIONS=pg1,redis1
+
+      - LABEL_pg1=SugarRadar Staging PG
+      - SERVER_pg1=sugarradar-staging-postgres
+      - PORT_pg1=5432
+      - USER_pg1=${POSTGRES_USER}
+      - PASSWORD_pg1=${POSTGRES_PASSWORD}
+      - DATABASE_pg1=${POSTGRES_DB}
+      - ENGINE_pg1=postgres@dbgate-plugin-postgres
+
+      - LABEL_redis1=SugarRadar Staging Redis
+      - URL_redis1=redis://sugarradar-staging-redis:6379
+      - ENGINE_redis1=redis@dbgate-plugin-redis
     depends_on:
       - sugarradar-staging-postgres
+      - sugarradar-staging-redis
     networks:
       - shared-network
       - sugarradar-internal
