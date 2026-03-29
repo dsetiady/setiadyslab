@@ -10,6 +10,11 @@ services:
       - mailpit-data:/data
     networks:
       - shared-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
 
 volumes:
   mailpit-data:

@@ -130,6 +130,12 @@ Shared SMTP mail catcher for all app stacks in development/staging. Any service 
 
 Cloudflare route: `mail.setiady.com` → `localhost:3025`
 
+#### Resource Limits
+
+| Container | Memory | CPU |
+|-----------|--------|-----|
+| `mailpit` | 128 MB | 0.5 |
+
 **Usage in app stacks:**
 ```
 SMTP_HOST=mailpit
