@@ -33,9 +33,9 @@ Docker Swarm stack definitions for a single-node Intel NUC homelab. All stacks a
 | 1025      | mailpit SMTP (special case — standard dev SMTP port)            |
 | 2222      | gitea SSH (special case — standard containerized git SSH)       |
 | 3000–3099 | Infrastructure services                                         |
+| 4000–4099 | Automation & workflow tools                                     |
 | 8000–8099 | SugarRadar Staging                                              |
 | 8100–8199 | SugarRadar Production *(reserved)*                              |
-| 8200–8299 | n8n                                                             |
 | 9000–9099 | Ops tools *(portainer stays at 9443 — standard portainer port)* |
 
 When adding a new service, pick the next free port within its stack's range. When adding a new stack, allocate a new range block.
@@ -55,7 +55,7 @@ Ports already in use on the host — do not reassign:
 | 8001 | glucose frontend      |
 | 8002 | dbgate                |
 | 8003 | asynqmon              |
-| 8200 | n8n                   |
+| 4000 | n8n                   |
 
 ## Documentation maintenance
 

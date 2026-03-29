@@ -55,9 +55,9 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 1025      | mailpit SMTP (special case — standard dev SMTP port)         |
 | 2222      | gitea SSH (special case — standard containerized git SSH)    |
 | 3000–3099 | Infrastructure services                                      |
+| 4000–4099 | Automation & workflow tools                                   |
 | 8000–8099 | SugarRadar Staging                                           |
 | 8100–8199 | SugarRadar Production *(reserved)*                           |
-| 8200–8299 | n8n                                                          |
 | 9000–9099 | Ops tools *(portainer stays at 9443 — standard portainer port)* |
 
 ### Host-Exposed Ports
@@ -73,7 +73,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 8001      | 80             | `sugarradar-staging-glucose` frontend | sugarradar-staging |
 | 8002      | 3000           | `sugarradar-staging-dbgate` DB admin  | sugarradar-staging |
 | 8003      | 8080           | `sugarradar-staging-asynqmon`         | sugarradar-staging |
-| 8200      | 5678           | `n8n` web UI                          | n8n                |
+| 4000      | 5678           | `n8n` web UI                          | n8n                |
 
 ### Internal-Only (no host binding)
 
@@ -188,7 +188,7 @@ Workflow automation platform backed by PostgreSQL.
 | `n8n`         | `n8nio/n8n:latest`   | `shared-network`, `n8n-internal` | 8200        |
 | `n8n-postgres`| `postgres:16-alpine` | `n8n-internal`                 | —           |
 
-Cloudflare route: `n8n.setiady.com` → `localhost:8200`
+Cloudflare route: `n8n.setiady.com` → `localhost:4000`
 
 #### Resource Limits
 

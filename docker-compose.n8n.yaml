@@ -4,7 +4,7 @@ services:
     container_name: n8n
     restart: unless-stopped
     ports:
-      - "8200:5678"
+      - "4000:5678"
     environment:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=n8n-postgres
