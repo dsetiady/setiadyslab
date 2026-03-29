@@ -42,6 +42,11 @@ services:
     networks:
       - shared-network
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "2.0"
 
   sugarradar-staging-sucrose-worker:
     image: localhost:3000/sugarradar/sucrose-worker:latest
@@ -83,6 +88,11 @@ services:
       - sugarradar-staging-redis
     networks:
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "2.0"
 
   sugarradar-staging-sucrose-scheduler:
     image: localhost:3000/sugarradar/sucrose-scheduler:latest
@@ -124,6 +134,11 @@ services:
       - sugarradar-staging-redis
     networks:
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "1.0"
 
   sugarradar-staging-postgres:
     image: postgres:16-alpine
@@ -143,6 +158,11 @@ services:
       start_period: 30s
     networks:
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
 
   sugarradar-staging-redis:
     image: redis:7-alpine
@@ -158,6 +178,11 @@ services:
       - sugarradar-staging-redis-data:/data
     networks:
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
 
   sugarradar-staging-dbgate:
     image: dbgate/dbgate:latest
@@ -185,6 +210,11 @@ services:
     networks:
       - shared-network
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
 
   sugarradar-staging-glucose:
     image: localhost:3000/sugarradar/glucose:latest
@@ -195,6 +225,11 @@ services:
     networks:
       - shared-network
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
 
   sugarradar-staging-asynqmon:
     image: hibiken/asynqmon:0.7.2
@@ -209,6 +244,11 @@ services:
     networks:
       - shared-network
       - sugarradar-internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
 
 volumes:
   sugarradar-staging-postgres-data:

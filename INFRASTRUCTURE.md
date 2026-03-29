@@ -108,6 +108,13 @@ Self-hosted Git + container registry (`localhost:3000`).
 
 Cloudflare route: `gitea.setiady.com` → `localhost:3000`
 
+#### Resource Limits
+
+| Container  | Memory | CPU |
+|------------|--------|-----|
+| `gitea`    | 1 GB   | 2.0 |
+| `gitea-db` | 512 MB | 1.0 |
+
 **Env vars required:**
 - `GITEA_DB_PASSWORD`
 
@@ -185,6 +192,19 @@ Full staging environment for the SugarRadar app.
 - **glucose** — Frontend (Vite/React)
 - **dbgate** — Database + Redis admin UI
 - **asynqmon** — Asynq queue monitor UI
+
+#### Resource Limits
+
+| Container                      | Memory | CPU |
+|--------------------------------|--------|-----|
+| `sugarradar-staging-sucrose`   | 512 MB | 2.0 |
+| `sugarradar-sucrose-worker`    | 512 MB | 2.0 |
+| `sugarradar-sucrose-scheduler` | 256 MB | 1.0 |
+| `sugarradar-staging-postgres`  | 512 MB | 1.0 |
+| `sugarradar-staging-redis`     | 256 MB | 0.5 |
+| `sugarradar-staging-glucose`   | 256 MB | 0.5 |
+| `sugarradar-staging-dbgate`    | 256 MB | 0.5 |
+| `sugarradar-staging-asynqmon`  | 128 MB | 0.5 |
 
 #### Cloudflare Routes
 
