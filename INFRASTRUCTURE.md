@@ -29,6 +29,7 @@ Single-node homelab running on an Intel NUC, managed via Docker Swarm. All exter
 | `shared-network`       | overlay (attachable, external) | Services reachable by cloudflared and cross-stack |
 | `sugarradar-internal`  | overlay                        | Internal sugarradar-staging services only         |
 | `gitea-internal`       | overlay                        | Internal Gitea + DB only                          |
+| `n8n-internal`         | overlay                        | Internal n8n + DB only                            |
 | `agent_network`        | overlay                        | Portainer agent communication                     |
 
 > **Rule:** Any service that needs to be exposed via Cloudflare Tunnel must be on `shared-network`.
@@ -56,6 +57,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 3000–3099 | Infrastructure services                                      |
 | 8000–8099 | SugarRadar Staging                                           |
 | 8100–8199 | SugarRadar Production *(reserved)*                           |
+| 8200–8299 | n8n                                                          |
 | 9000–9099 | Ops tools *(portainer stays at 9443 — standard portainer port)* |
 
 ### Host-Exposed Ports
@@ -71,6 +73,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 8001      | 80             | `sugarradar-staging-glucose` frontend | sugarradar-staging |
 | 8002      | 3000           | `sugarradar-staging-dbgate` DB admin  | sugarradar-staging |
 | 8003      | 8080           | `sugarradar-staging-asynqmon`         | sugarradar-staging |
+| 8200      | 5678           | `n8n` web UI                          | n8n                |
 
 ### Internal-Only (no host binding)
 
@@ -79,6 +82,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 5432           | `sugarradar-staging-postgres` | `sugarradar-internal` network |
 | 6379           | `sugarradar-staging-redis`    | `sugarradar-internal` network |
 | 5432           | `gitea-db`                    | `gitea-internal` network      |
+| 5432           | `n8n-postgres`                | `n8n-internal` network        |
 
 ---
 
@@ -173,7 +177,41 @@ Cloudflare route: `lajula.app` → `http://lajuladotapp:<port>` (via shared-netw
 
 ---
 
-### 6. SugarRadar Staging (`docker-compose.sugarradar-staging.yaml`)
+### 6. n8n (`docker-compose.n8n.yaml`)
+
+Workflow automation platform backed by PostgreSQL.
+
+#### Services
+
+| Container     | Image                | Network(s)                     | Port (host) |
+|---------------|----------------------|--------------------------------|-------------|
+| `n8n`         | `n8nio/n8n:latest`   | `shared-network`, `n8n-internal` | 8200        |
+| `n8n-postgres`| `postgres:16-alpine` | `n8n-internal`                 | —           |
+
+Cloudflare route: `n8n.setiady.com` → `localhost:8200`
+
+#### Resource Limits
+
+| Container      | Memory | CPU |
+|----------------|--------|-----|
+| `n8n`          | 1 GB   | 2.0 |
+| `n8n-postgres` | 512 MB | 1.0 |
+
+#### Key Env Vars
+
+| Variable              | Example Value         | Notes                                        |
+|-----------------------|-----------------------|----------------------------------------------|
+| `POSTGRES_DB`         | `n8n`                 |                                              |
+| `POSTGRES_USER`       | `n8n`                 |                                              |
+| `POSTGRES_PASSWORD`   | *(secret)*            | Set in Portainer                             |
+| `N8N_ENCRYPTION_KEY`  | *(secret)*            | `openssl rand -hex 32` — store permanently   |
+| `N8N_HOST`            | `n8n.setiady.com`     |                                              |
+| `WEBHOOK_URL`         | `https://n8n.setiady.com` |                                          |
+| `GENERIC_TIMEZONE`    | `Asia/Jakarta`        |                                              |
+
+---
+
+### 7. SugarRadar Staging (`docker-compose.sugarradar-staging.yaml`)
 
 Full staging environment for the SugarRadar app.
 
@@ -245,6 +283,7 @@ Full staging environment for the SugarRadar app.
 | Gitea         | `https://gitea.setiady.com`     | Git + registry               |
 | Glances       | `https://glances.setiady.com`   | System monitoring            |
 | Mailpit       | `https://mail.setiady.com`      | Shared dev mail UI           |
+| n8n           | `https://n8n.setiady.com`       | Workflow automation          |
 
 **Laptop SSH config (`~/.ssh/config`):**
 ```
@@ -266,4 +305,5 @@ When setting up from scratch, deploy in this order:
 5. Deploy **mailpit**
 6. Deploy **glances** (standalone `docker run`)
 7. Deploy **lajula.app**
-8. Deploy **sugarradar-staging**
+8. Deploy **n8n**
+9. Deploy **sugarradar-staging**
