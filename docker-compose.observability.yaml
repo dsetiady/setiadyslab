@@ -2,219 +2,17 @@
 # Shared across all projects on the homelab.
 #
 # Deploy via Portainer as stack "observability".
-# Set GRAFANA_ADMIN_PASSWORD in Portainer env vars.
 #
-# Promtail auto-discovers all Docker containers and ships logs to Loki.
-# Zero changes required in any application stack.
-
-configs:
-  loki_config:
-    content: |
-      auth_enabled: false
-
-      server:
-        http_listen_port: 3100
-
-      common:
-        path_prefix: /loki
-        storage:
-          filesystem:
-            chunks_directory: /loki/chunks
-            rules_directory: /loki/rules
-        replication_factor: 1
-        ring:
-          kvstore:
-            store: inmemory
-
-      limits_config:
-        retention_period: 720h
-
-      schema_config:
-        configs:
-          - from: 2020-10-24
-            store: tsdb
-            object_store: filesystem
-            schema: v13
-            index:
-              prefix: index_
-              period: 24h
-
-      compactor:
-        working_directory: /loki/compactor
-        retention_enabled: true
-
-  promtail_config:
-    content: |
-      server:
-        http_listen_port: 9080
-        grpc_listen_port: 0
-
-      positions:
-        filename: /tmp/positions.yaml
-
-      clients:
-        - url: http://observability-loki:3100/loki/api/v1/push
-
-      scrape_configs:
-        - job_name: docker
-          docker_sd_configs:
-            - host: unix:///var/run/docker.sock
-              refresh_interval: 5s
-          relabel_configs:
-            - source_labels: ['__meta_docker_container_name']
-              regex: '/(.*)'
-              target_label: 'container'
-            - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
-              target_label: 'project'
-            - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
-              target_label: 'service'
-          pipeline_stages:
-            - docker: {}
-            - json:
-                expressions:
-                  level: level
-                  component: component
-                  trace_id: trace_id
-                  operation: operation
-            - labels:
-                level:
-                component:
-
-  grafana_datasource:
-    content: |
-      apiVersion: 1
-      datasources:
-        - name: Loki
-          type: loki
-          access: proxy
-          url: http://observability-loki:3100
-          isDefault: true
-          editable: false
-
-  grafana_dashboard_provider:
-    content: |
-      apiVersion: 1
-      providers:
-        - name: default
-          orgId: 1
-          folder: ''
-          type: file
-          disableDeletion: false
-          editable: true
-          options:
-            path: /var/lib/grafana/dashboards
-            foldersFromFilesStructure: false
-
-  grafana_dashboard_sugarradar:
-    content: |
-      {
-        "annotations": { "list": [] },
-        "editable": true,
-        "fiscalYearStartMonth": 0,
-        "graphTooltip": 0,
-        "id": null,
-        "links": [],
-        "panels": [
-          {
-            "title": "All Logs",
-            "type": "logs",
-            "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "{container=~\"sugarradar.*\"}",
-                "refId": "A"
-              }
-            ],
-            "options": {
-              "showTime": true,
-              "sortOrder": "Descending",
-              "enableLogDetails": true,
-              "dedupStrategy": "none",
-              "wrapLogMessage": true
-            }
-          },
-          {
-            "title": "Errors Only",
-            "type": "logs",
-            "gridPos": { "h": 10, "w": 12, "x": 0, "y": 12 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "{container=~\"sugarradar.*\"} | json | level=\"error\"",
-                "refId": "A"
-              }
-            ],
-            "options": {
-              "showTime": true,
-              "sortOrder": "Descending",
-              "enableLogDetails": true,
-              "wrapLogMessage": true
-            }
-          },
-          {
-            "title": "Webhook Events",
-            "type": "logs",
-            "gridPos": { "h": 10, "w": 12, "x": 12, "y": 12 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "{container=\"sugarradar-staging-sucrose\"} |= \"webhook\"",
-                "refId": "A"
-              }
-            ],
-            "options": {
-              "showTime": true,
-              "sortOrder": "Descending",
-              "enableLogDetails": true,
-              "wrapLogMessage": true
-            }
-          },
-          {
-            "title": "Push Notifications",
-            "type": "logs",
-            "gridPos": { "h": 10, "w": 12, "x": 0, "y": 22 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "{container=\"sugarradar-staging-sucrose\"} |= \"expo_push_gateway\"",
-                "refId": "A"
-              }
-            ],
-            "options": {
-              "showTime": true,
-              "sortOrder": "Descending",
-              "enableLogDetails": true,
-              "wrapLogMessage": true
-            }
-          },
-          {
-            "title": "Slow Operations (>1s)",
-            "type": "logs",
-            "gridPos": { "h": 10, "w": 12, "x": 12, "y": 22 },
-            "datasource": { "type": "loki", "uid": "loki" },
-            "targets": [
-              {
-                "expr": "{container=~\"sugarradar.*\"} | json | duration_ms > 1000",
-                "refId": "A"
-              }
-            ],
-            "options": {
-              "showTime": true,
-              "sortOrder": "Descending",
-              "enableLogDetails": true,
-              "wrapLogMessage": true
-            }
-          }
-        ],
-        "schemaVersion": 39,
-        "tags": ["sugarradar", "staging"],
-        "templating": { "list": [] },
-        "time": { "from": "now-1h", "to": "now" },
-        "title": "SugarRadar Staging",
-        "uid": "sugarradar-staging",
-        "version": 1
-      }
+# Prerequisites:
+#   1. Create these configs in Portainer (Configs section) BEFORE deploying:
+#      - observability_loki_config
+#      - observability_promtail_config
+#      - observability_grafana_datasource
+#      - observability_grafana_dashboard_provider
+#      - observability_grafana_dashboard_sugarradar
+#   2. Set GRAFANA_ADMIN_PASSWORD in Portainer stack env vars.
+#
+# See bottom of this file for the content of each config.
 
 services:
   observability-loki:
@@ -223,7 +21,7 @@ services:
     restart: unless-stopped
     command: -config.file=/etc/loki/config.yaml
     configs:
-      - source: loki_config
+      - source: observability_loki_config
         target: /etc/loki/config.yaml
     volumes:
       - loki-data:/loki
@@ -241,7 +39,7 @@ services:
     restart: unless-stopped
     command: -config.file=/etc/promtail/config.yaml
     configs:
-      - source: promtail_config
+      - source: observability_promtail_config
         target: /etc/promtail/config.yaml
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -267,11 +65,11 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_SERVER_ROOT_URL=https://grafana.setiady.com
     configs:
-      - source: grafana_datasource
+      - source: observability_grafana_datasource
         target: /etc/grafana/provisioning/datasources/loki.yaml
-      - source: grafana_dashboard_provider
+      - source: observability_grafana_dashboard_provider
         target: /etc/grafana/provisioning/dashboards/default.yaml
-      - source: grafana_dashboard_sugarradar
+      - source: observability_grafana_dashboard_sugarradar
         target: /var/lib/grafana/dashboards/sugarradar-staging.json
     volumes:
       - grafana-data:/var/lib/grafana
@@ -288,6 +86,18 @@ services:
           memory: 256M
           cpus: "0.5"
 
+configs:
+  observability_loki_config:
+    external: true
+  observability_promtail_config:
+    external: true
+  observability_grafana_datasource:
+    external: true
+  observability_grafana_dashboard_provider:
+    external: true
+  observability_grafana_dashboard_sugarradar:
+    external: true
+
 volumes:
   loki-data:
   grafana-data:
@@ -298,3 +108,109 @@ networks:
     external: true
   observability-internal:
     driver: overlay
+
+# ============================================================
+# PORTAINER CONFIGS — Create these in Portainer > Configs
+# before deploying this stack.
+# ============================================================
+#
+# ---- Config: observability_loki_config ----
+#
+# auth_enabled: false
+#
+# server:
+#   http_listen_port: 3100
+#
+# common:
+#   path_prefix: /loki
+#   storage:
+#     filesystem:
+#       chunks_directory: /loki/chunks
+#       rules_directory: /loki/rules
+#   replication_factor: 1
+#   ring:
+#     kvstore:
+#       store: inmemory
+#
+# limits_config:
+#   retention_period: 720h
+#
+# schema_config:
+#   configs:
+#     - from: 2020-10-24
+#       store: tsdb
+#       object_store: filesystem
+#       schema: v13
+#       index:
+#         prefix: index_
+#         period: 24h
+#
+# compactor:
+#   working_directory: /loki/compactor
+#   retention_enabled: true
+#
+# ---- Config: observability_promtail_config ----
+#
+# server:
+#   http_listen_port: 9080
+#   grpc_listen_port: 0
+#
+# positions:
+#   filename: /tmp/positions.yaml
+#
+# clients:
+#   - url: http://observability-loki:3100/loki/api/v1/push
+#
+# scrape_configs:
+#   - job_name: docker
+#     docker_sd_configs:
+#       - host: unix:///var/run/docker.sock
+#         refresh_interval: 5s
+#     relabel_configs:
+#       - source_labels: ['__meta_docker_container_name']
+#         regex: '/(.*)'
+#         target_label: 'container'
+#       - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+#         target_label: 'project'
+#       - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+#         target_label: 'service'
+#     pipeline_stages:
+#       - docker: {}
+#       - json:
+#           expressions:
+#             level: level
+#             component: component
+#             trace_id: trace_id
+#             operation: operation
+#       - labels:
+#             level:
+#             component:
+#
+# ---- Config: observability_grafana_datasource ----
+#
+# apiVersion: 1
+# datasources:
+#   - name: Loki
+#     type: loki
+#     access: proxy
+#     url: http://observability-loki:3100
+#     isDefault: true
+#     editable: false
+#
+# ---- Config: observability_grafana_dashboard_provider ----
+#
+# apiVersion: 1
+# providers:
+#   - name: default
+#     orgId: 1
+#     folder: ''
+#     type: file
+#     disableDeletion: false
+#     editable: true
+#     options:
+#       path: /var/lib/grafana/dashboards
+#       foldersFromFilesStructure: false
+#
+# ---- Config: observability_grafana_dashboard_sugarradar ----
+#
+# (See sugarradar-staging-dashboard.json in this repo)
