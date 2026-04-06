@@ -56,6 +56,7 @@ Ports already in use on the host — do not reassign:
 | 8002 | dbgate                |
 | 8003 | asynqmon              |
 | 4000 | n8n                   |
+| 9001 | observability-grafana |
 
 ## Documentation maintenance
 

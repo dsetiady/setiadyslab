@@ -74,6 +74,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 8002      | 3000           | `sugarradar-staging-dbgate` DB admin  | sugarradar-staging |
 | 8003      | 8080           | `sugarradar-staging-asynqmon`         | sugarradar-staging |
 | 4000      | 5678           | `n8n` web UI                          | n8n                |
+| 9001      | 3000           | `observability-grafana` log dashboard | observability      |
 
 ### Internal-Only (no host binding)
 
@@ -284,12 +285,69 @@ Full staging environment for the SugarRadar app.
 | Glances       | `https://glances.setiady.com`   | System monitoring            |
 | Mailpit       | `https://mail.setiady.com`      | Shared dev mail UI           |
 | n8n           | `https://n8n.setiady.com`       | Workflow automation          |
+| Grafana       | `https://grafana.setiady.com`   | Log aggregation (Loki)       |
 
 **Laptop SSH config (`~/.ssh/config`):**
 ```
 Host ssh.setiady.com
   ProxyCommand cloudflared access ssh --hostname ssh.setiady.com
   User dennysetiady
+```
+
+---
+
+### 8. Observability (`docker-compose.observability.yaml`)
+
+Shared log aggregation stack. Promtail auto-discovers all Docker containers and ships structured logs to Loki. Grafana provides search and dashboards.
+
+#### Services
+
+| Container                | Image                      | Network(s)                               | Port (host) |
+|--------------------------|----------------------------|------------------------------------------|-------------|
+| `observability-loki`     | `grafana/loki:3.0.0`      | `observability-internal`                 | —           |
+| `observability-promtail` | `grafana/promtail:3.0.0`  | `observability-internal`                 | —           |
+| `observability-grafana`  | `grafana/grafana:11.0.0`  | `shared-network`, `observability-internal` | 9001      |
+
+#### Resource Limits
+
+| Container                | Memory | CPU |
+|--------------------------|--------|-----|
+| `observability-loki`     | 512 MB | 1.0 |
+| `observability-promtail` | 256 MB | 0.5 |
+| `observability-grafana`  | 256 MB | 0.5 |
+
+Cloudflare route: `grafana.setiady.com` → `localhost:9001`
+
+#### Key Env Vars
+
+| Variable                 | Example Value | Notes                    |
+|--------------------------|---------------|--------------------------|
+| `GRAFANA_ADMIN_PASSWORD` | *(secret)*    | Set in Portainer         |
+
+#### Useful Queries (Grafana → Explore → Loki)
+
+```
+# All SugarRadar logs
+{container=~"sugarradar.*"}
+
+# Errors only
+{container=~"sugarradar.*"} | json | level="error"
+
+# Webhook events
+{container="sugarradar-staging-sucrose"} |= "webhook"
+
+# Push notifications
+{container="sugarradar-staging-sucrose"} | json | component="expo_push_gateway"
+
+# Trace a request
+{container="sugarradar-staging-sucrose"} | json | trace_id="<uuid>"
+
+# Slow operations
+{container=~"sugarradar.*"} | json | duration_ms > 1000
+
+# All projects
+{container=~"gitea.*"}
+{container=~"n8n.*"}
 ```
 
 ---
@@ -306,4 +364,5 @@ When setting up from scratch, deploy in this order:
 6. Deploy **glances** (standalone `docker run`)
 7. Deploy **lajula.app**
 8. Deploy **n8n**
-9. Deploy **sugarradar-staging**
+9. Deploy **observability** (Loki + Grafana)
+10. Deploy **sugarradar-staging**

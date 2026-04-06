@@ -16,6 +16,7 @@ Docker Swarm homelab running on a single Intel NUC, managed via Portainer. All e
 | [`docker-compose.lajula.app.yaml`](docker-compose.lajula.app.yaml)                  | lajula.app web service               |
 | [`docker-compose.n8n.yaml`](docker-compose.n8n.yaml)                                | n8n workflow automation               |
 | [`docker-compose.sugarradar-staging.yaml`](docker-compose.sugarradar-staging.yaml)  | SugarRadar staging environment       |
+| [`docker-compose.observability.yaml`](docker-compose.observability.yaml)            | Loki + Grafana log aggregation       |
 
 ## Quick Reference
 
