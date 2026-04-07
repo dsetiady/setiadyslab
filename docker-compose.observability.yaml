@@ -148,6 +148,7 @@ networks:
 # compactor:
 #   working_directory: /loki/compactor
 #   retention_enabled: true
+#   delete_request_store: filesystem
 #
 # ---- Config: observability_promtail_config ----
 #
@@ -193,6 +194,7 @@ networks:
 #   - name: Loki
 #     type: loki
 #     access: proxy
+#     uid: loki
 #     url: http://observability-loki:3100
 #     isDefault: true
 #     editable: false
