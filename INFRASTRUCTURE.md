@@ -28,6 +28,7 @@ Single-node homelab running on an Intel NUC, managed via Docker Swarm. All exter
 |------------------------|--------------------------------|---------------------------------------------------|
 | `shared-network`       | overlay (attachable, external) | Services reachable by cloudflared and cross-stack |
 | `sugarradar-internal`  | overlay                        | Internal sugarradar-staging services only         |
+| `sugarradar-production-internal` | overlay                   | Internal sugarradar-production services only      |
 | `gitea-internal`       | overlay                        | Internal Gitea + DB only                          |
 | `n8n-internal`         | overlay                        | Internal n8n + DB only                            |
 | `agent_network`        | overlay                        | Portainer agent communication                     |
@@ -57,7 +58,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 3000–3099 | Infrastructure services                                      |
 | 4000–4099 | Automation & workflow tools                                   |
 | 8000–8099 | SugarRadar Staging                                           |
-| 8100–8199 | SugarRadar Production *(reserved)*                           |
+| 8100–8199 | SugarRadar Production                                        |
 | 9000–9099 | Ops tools *(portainer stays at 9443 — standard portainer port)* |
 
 ### Host-Exposed Ports
@@ -74,14 +75,20 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 8002      | 3000           | `sugarradar-staging-dbgate` DB admin  | sugarradar-staging |
 | 8003      | 8080           | `sugarradar-staging-asynqmon`         | sugarradar-staging |
 | 4000      | 5678           | `n8n` web UI                          | n8n                |
+| 8100      | 8080           | `sugarradar-production-sucrose` API         | sugarradar-production |
+| 8101      | 80             | `sugarradar-production-glucose` frontend    | sugarradar-production |
+| 8102      | 3000           | `sugarradar-production-dbgate` DB admin     | sugarradar-production |
+| 8103      | 8080           | `sugarradar-production-asynqmon`            | sugarradar-production |
 | 9001      | 3000           | `observability-grafana` log dashboard | observability      |
 
 ### Internal-Only (no host binding)
 
 | Container Port | Service                       | Reachable via                 |
 |----------------|-------------------------------|-------------------------------|
-| 5432           | `sugarradar-staging-postgres` | `sugarradar-internal` network |
-| 6379           | `sugarradar-staging-redis`    | `sugarradar-internal` network |
+| 5432           | `sugarradar-staging-postgres` | `sugarradar-internal` network      |
+| 6379           | `sugarradar-staging-redis`    | `sugarradar-internal` network      |
+| 5432           | `sugarradar-production-postgres`    | `sugarradar-production-internal` network |
+| 6379           | `sugarradar-production-redis`       | `sugarradar-production-internal` network |
 | 5432           | `gitea-db`                    | `gitea-internal` network      |
 | 5432           | `n8n-postgres`                | `n8n-internal` network        |
 
@@ -275,6 +282,95 @@ Full staging environment for the SugarRadar app.
 
 ---
 
+### 8. SugarRadar Production (`docker-compose.sugarradar-production.yaml`)
+
+Production environment for the SugarRadar app with automated database backups.
+
+#### Services
+
+| Container                          | Image                                                    | Network(s)                                   | Port (host) |
+|------------------------------------|----------------------------------------------------------|----------------------------------------------|-------------|
+| `sugarradar-production-sucrose`          | `localhost:3000/sugarradar/sucrose:stable`               | `shared-network`, `sugarradar-production-internal` | 8100        |
+| `sugarradar-production-sucrose-worker`   | `localhost:3000/sugarradar/sucrose-worker:stable`        | `sugarradar-production-internal`                   | —           |
+| `sugarradar-production-sucrose-scheduler`| `localhost:3000/sugarradar/sucrose-scheduler:stable`     | `sugarradar-production-internal`                   | —           |
+| `sugarradar-production-glucose`          | `localhost:3000/sugarradar/glucose:stable`               | `shared-network`, `sugarradar-production-internal` | 8101        |
+| `sugarradar-production-postgres`         | `postgres:16-alpine`                                     | `sugarradar-production-internal`                   | —           |
+| `sugarradar-production-redis`            | `redis:7-alpine`                                         | `sugarradar-production-internal`                   | —           |
+| `sugarradar-production-pg-backup`        | `prodrigestivill/postgres-backup-local:16-alpine`        | `sugarradar-production-internal`                   | —           |
+| `sugarradar-production-dbgate`           | `dbgate/dbgate:latest`                                   | `shared-network`, `sugarradar-production-internal` | 8102        |
+| `sugarradar-production-asynqmon`         | `hibiken/asynqmon:0.7.2`                                 | `shared-network`, `sugarradar-production-internal` | 8103        |
+
+#### Resource Limits
+
+| Container                           | Memory | CPU |
+|-------------------------------------|--------|-----|
+| `sugarradar-production-sucrose`           | 512 MB | 2.0 |
+| `sugarradar-production-sucrose-worker`    | 512 MB | 2.0 |
+| `sugarradar-production-sucrose-scheduler` | 256 MB | 1.0 |
+| `sugarradar-production-postgres`          | 512 MB | 1.0 |
+| `sugarradar-production-redis`             | 256 MB | 0.5 |
+| `sugarradar-production-pg-backup`         | 256 MB | 0.5 |
+| `sugarradar-production-glucose`           | 256 MB | 0.5 |
+| `sugarradar-production-dbgate`            | 256 MB | 0.5 |
+| `sugarradar-production-asynqmon`          | 128 MB | 0.5 |
+
+#### Database Backup
+
+Automated PostgreSQL backups using `postgres-backup-local`:
+
+| Setting              | Value   |
+|----------------------|---------|
+| Schedule             | Daily   |
+| Keep daily backups   | 7 days  |
+| Keep weekly backups  | 4 weeks |
+| Keep monthly backups | 6 months|
+| Backup volume        | `sugarradar-production-pg-backups` |
+
+Backups are stored as compressed SQL dumps in the `sugarradar-production-pg-backups` volume.
+
+To restore a backup:
+```bash
+# List available backups
+docker exec sugarradar-production-pg-backup ls /backups/sugarradar
+
+# Restore a specific backup
+docker exec -i sugarradar-production-postgres pg_restore -U <user> -d <db> < backup_file.sql
+# Or for plain SQL dumps:
+docker exec -i sugarradar-production-postgres psql -U <user> -d <db> < backup_file.sql.gz
+```
+
+#### Cloudflare Routes
+
+| Hostname                      | URL              | Service          |
+|-------------------------------|------------------|------------------|
+| `sucrose.sugarradar.com`      | `localhost:8100` | sucrose API      |
+| `glucose.sugarradar.com`      | `localhost:8101` | glucose frontend |
+| `prod-dbgate.sugarradar.com`  | `localhost:8102` | dbgate           |
+| `prod-asynqmon.sugarradar.com`| `localhost:8103` | asynqmon         |
+
+#### Key Env Vars
+
+| Variable        | Example Value                | Notes                                             |
+|-----------------|------------------------------|---------------------------------------------------|
+| `POSTGRES_HOST` | `sugarradar-production-postgres`   | Must use container name, not `postgres`           |
+| `POSTGRES_PORT` | `5432`                       |                                                   |
+| `POSTGRES_DB`   | `sugarradar`                 | Use a separate DB name from staging               |
+| `REDIS_ADDR`    | `sugarradar-production-redis:6379` | Must use container name                           |
+| `SMTP_HOST`     | *(real SMTP provider)*       | Do NOT use mailpit — use a real email provider    |
+| `SMTP_PORT`     | `587`                        |                                                   |
+| `AI_PROVIDER`   | `gemini`                     |                                                   |
+| `LOG_LEVEL`     | `info`                       | Avoid `debug` in production                       |
+| `SPACES_REGION` | `sgp1`                       | Use a separate bucket from staging                |
+
+#### Key Differences from Staging
+
+- Image tag: `:stable` instead of `:latest` — push tested images as `:stable` before deploying
+- SMTP: use a real email provider (not mailpit)
+- Separate Docker volumes, network, and env vars in Portainer
+- Automated daily database backups with retention
+
+---
+
 ## Remote Access Summary
 
 | Access Method | URL                             | Notes                        |
@@ -296,7 +392,7 @@ Host ssh.setiady.com
 
 ---
 
-### 8. Observability (`docker-compose.observability.yaml`)
+### 9. Observability (`docker-compose.observability.yaml`)
 
 Shared log aggregation stack. Promtail auto-discovers all Docker containers and ships structured logs to Loki. Grafana provides search and dashboards.
 
@@ -366,3 +462,4 @@ When setting up from scratch, deploy in this order:
 8. Deploy **n8n**
 9. Deploy **observability** (Loki + Grafana)
 10. Deploy **sugarradar-staging**
+11. Deploy **sugarradar-production**

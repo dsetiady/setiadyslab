@@ -1,0 +1,289 @@
+services:
+  sugarradar-production-sucrose:
+    image: localhost:3000/sugarradar/sucrose:stable
+    container_name: sugarradar-production-sucrose
+    restart: unless-stopped
+    ports:
+      - "8100:8080"
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - MAX_BONUS_SCANS_PER_DAY=${MAX_BONUS_SCANS_PER_DAY}
+      - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
+      - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
+      - SPACES_REGION=${SPACES_REGION}
+      - SPACES_BUCKET=${SPACES_BUCKET}
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT}
+      - SPACES_CDN_URL=${SPACES_CDN_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - GOOGLE_CLIENT_IDS=${GOOGLE_CLIENT_IDS}
+      - REVENUECAT_SECRET_KEY=${REVENUECAT_SECRET_KEY}
+      - REVENUECAT_PROJECT_ID=${REVENUECAT_PROJECT_ID}
+      - REVENUECAT_ENTITLEMENT_ID=${REVENUECAT_ENTITLEMENT_ID}
+      - REVENUECAT_SYNC_COOLDOWN_SECONDS=${REVENUECAT_SYNC_COOLDOWN_SECONDS}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    depends_on:
+      - sugarradar-production-postgres
+      - sugarradar-production-redis
+    networks:
+      - shared-network
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "2.0"
+
+  sugarradar-production-sucrose-worker:
+    image: localhost:3000/sugarradar/sucrose-worker:stable
+    container_name: sugarradar-production-sucrose-worker
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - MAX_BONUS_SCANS_PER_DAY=${MAX_BONUS_SCANS_PER_DAY}
+      - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
+      - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
+      - SPACES_REGION=${SPACES_REGION}
+      - SPACES_BUCKET=${SPACES_BUCKET}
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT}
+      - SPACES_CDN_URL=${SPACES_CDN_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - GOOGLE_CLIENT_IDS=${GOOGLE_CLIENT_IDS}
+      - REVENUECAT_SECRET_KEY=${REVENUECAT_SECRET_KEY}
+      - REVENUECAT_PROJECT_ID=${REVENUECAT_PROJECT_ID}
+      - REVENUECAT_ENTITLEMENT_ID=${REVENUECAT_ENTITLEMENT_ID}
+      - REVENUECAT_SYNC_COOLDOWN_SECONDS=${REVENUECAT_SYNC_COOLDOWN_SECONDS}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    depends_on:
+      - sugarradar-production-postgres
+      - sugarradar-production-redis
+    networks:
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "2.0"
+
+  sugarradar-production-sucrose-scheduler:
+    image: localhost:3000/sugarradar/sucrose-scheduler:stable
+    container_name: sugarradar-production-sucrose-scheduler
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - REDIS_ADDR=${REDIS_ADDR}
+      - AI_PROVIDER=${AI_PROVIDER}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FREE_DAILY_SCAN_LIMIT=${FREE_DAILY_SCAN_LIMIT}
+      - MAX_BONUS_SCANS_PER_DAY=${MAX_BONUS_SCANS_PER_DAY}
+      - SPACES_ACCESS_KEY=${SPACES_ACCESS_KEY}
+      - SPACES_SECRET_KEY=${SPACES_SECRET_KEY}
+      - SPACES_REGION=${SPACES_REGION}
+      - SPACES_BUCKET=${SPACES_BUCKET}
+      - SPACES_ENDPOINT=${SPACES_ENDPOINT}
+      - SPACES_CDN_URL=${SPACES_CDN_URL}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - LOG_FORMAT=${LOG_FORMAT}
+      - GOOGLE_CLIENT_IDS=${GOOGLE_CLIENT_IDS}
+      - REVENUECAT_SECRET_KEY=${REVENUECAT_SECRET_KEY}
+      - REVENUECAT_PROJECT_ID=${REVENUECAT_PROJECT_ID}
+      - REVENUECAT_ENTITLEMENT_ID=${REVENUECAT_ENTITLEMENT_ID}
+      - REVENUECAT_SYNC_COOLDOWN_SECONDS=${REVENUECAT_SYNC_COOLDOWN_SECONDS}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+    depends_on:
+      - sugarradar-production-postgres
+      - sugarradar-production-redis
+    networks:
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "1.0"
+
+  sugarradar-production-postgres:
+    image: postgres:16-alpine
+    container_name: sugarradar-production-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - sugarradar-production-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+
+  sugarradar-production-redis:
+    image: redis:7-alpine
+    container_name: sugarradar-production-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - sugarradar-production-redis-data:/data
+    networks:
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  sugarradar-production-pg-backup:
+    image: prodrigestivill/postgres-backup-local:16-alpine
+    container_name: sugarradar-production-pg-backup
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST=sugarradar-production-postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=8080
+    volumes:
+      - sugarradar-production-pg-backups:/backups
+    depends_on:
+      - sugarradar-production-postgres
+    networks:
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  sugarradar-production-dbgate:
+    image: dbgate/dbgate:latest
+    container_name: sugarradar-production-dbgate
+    restart: unless-stopped
+    ports:
+      - "8102:3000"
+    environment:
+      - CONNECTIONS=pg1,redis1
+
+      - LABEL_pg1=SugarRadar Production PG
+      - SERVER_pg1=sugarradar-production-postgres
+      - PORT_pg1=5432
+      - USER_pg1=${POSTGRES_USER}
+      - PASSWORD_pg1=${POSTGRES_PASSWORD}
+      - DATABASE_pg1=${POSTGRES_DB}
+      - ENGINE_pg1=postgres@dbgate-plugin-postgres
+
+      - LABEL_redis1=SugarRadar Production Redis
+      - URL_redis1=redis://sugarradar-production-redis:6379
+      - ENGINE_redis1=redis@dbgate-plugin-redis
+    depends_on:
+      - sugarradar-production-postgres
+      - sugarradar-production-redis
+    networks:
+      - shared-network
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  sugarradar-production-glucose:
+    image: localhost:3000/sugarradar/glucose:stable
+    container_name: sugarradar-production-glucose
+    restart: unless-stopped
+    ports:
+      - "8101:80"
+    networks:
+      - shared-network
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+  sugarradar-production-asynqmon:
+    image: hibiken/asynqmon:0.7.2
+    container_name: sugarradar-production-asynqmon
+    restart: unless-stopped
+    ports:
+      - "8103:8080"
+    environment:
+      - REDIS_ADDR=${REDIS_ADDR}
+    depends_on:
+      - sugarradar-production-redis
+    networks:
+      - shared-network
+      - sugarradar-production-internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.5"
+
+volumes:
+  sugarradar-production-postgres-data:
+  sugarradar-production-redis-data:
+  sugarradar-production-pg-backups:
+
+networks:
+  shared-network:
+    external: true
+  sugarradar-production-internal:
+    driver: overlay

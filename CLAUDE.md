@@ -35,7 +35,7 @@ Docker Swarm stack definitions for a single-node Intel NUC homelab. All stacks a
 | 3000–3099 | Infrastructure services                                         |
 | 4000–4099 | Automation & workflow tools                                     |
 | 8000–8099 | SugarRadar Staging                                              |
-| 8100–8199 | SugarRadar Production *(reserved)*                              |
+| 8100–8199 | SugarRadar Production                                           |
 | 9000–9099 | Ops tools *(portainer stays at 9443 — standard portainer port)* |
 
 When adding a new service, pick the next free port within its stack's range. When adding a new stack, allocate a new range block.
@@ -56,6 +56,10 @@ Ports already in use on the host — do not reassign:
 | 8002 | dbgate                |
 | 8003 | asynqmon              |
 | 4000 | n8n                   |
+| 8100 | sucrose API (prod)    |
+| 8101 | glucose frontend (prod)|
+| 8102 | dbgate (prod)         |
+| 8103 | asynqmon (prod)       |
 | 9001 | observability-grafana |
 
 ## Documentation maintenance
