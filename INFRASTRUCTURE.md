@@ -356,6 +356,8 @@ docker exec -i sugarradar-production-postgres psql -U <user> -d <db> < backup_fi
 | `POSTGRES_PORT` | `5432`                       |                                                   |
 | `POSTGRES_DB`   | `sugarradar`                 | Use a separate DB name from staging               |
 | `REDIS_ADDR`    | `sugarradar-production-redis:6379` | Must use container name                           |
+| `DBGATE_LOGIN`  | *(dbgate username)*          | Basic auth for prod-dbgate.sugarradar.com         |
+| `DBGATE_PASSWORD` | *(dbgate password)*        | Basic auth for prod-dbgate.sugarradar.com         |
 | `SMTP_HOST`     | *(real SMTP provider)*       | Do NOT use mailpit — use a real email provider    |
 | `SMTP_PORT`     | `587`                        |                                                   |
 | `AI_PROVIDER`   | `gemini`                     |                                                   |

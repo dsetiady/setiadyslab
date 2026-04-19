@@ -218,6 +218,8 @@ services:
     ports:
       - "8102:3000"
     environment:
+      - LOGIN=${DBGATE_LOGIN}
+      - PASSWORD=${DBGATE_PASSWORD}
       - CONNECTIONS=pg1,redis1
 
       - LABEL_pg1=SugarRadar Production PG
