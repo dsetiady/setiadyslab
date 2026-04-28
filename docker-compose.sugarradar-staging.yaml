@@ -1,6 +1,6 @@
 services:
   sugarradar-staging-sucrose:
-    image: localhost:3000/sugarradar/sucrose:latest
+    image: localhost:3000/sugarradar/sucrose:0.0.1
     container_name: sugarradar-staging-sucrose
     restart: unless-stopped
     ports:
@@ -49,7 +49,7 @@ services:
           cpus: "2.0"
 
   sugarradar-staging-sucrose-worker:
-    image: localhost:3000/sugarradar/sucrose-worker:latest
+    image: localhost:3000/sugarradar/sucrose-worker:0.0.1
     container_name: sugarradar-sucrose-worker
     restart: unless-stopped
     environment:
@@ -95,7 +95,7 @@ services:
           cpus: "2.0"
 
   sugarradar-staging-sucrose-scheduler:
-    image: localhost:3000/sugarradar/sucrose-scheduler:latest
+    image: localhost:3000/sugarradar/sucrose-scheduler:0.0.1
     container_name: sugarradar-sucrose-scheduler
     restart: unless-stopped
     environment:
@@ -185,7 +185,7 @@ services:
           cpus: "0.5"
 
   sugarradar-staging-dbgate:
-    image: dbgate/dbgate:latest
+    image: dbgate/dbgate:7.1.9
     container_name: sugarradar-staging-dbgate
     restart: unless-stopped
     ports:
@@ -217,7 +217,7 @@ services:
           cpus: "0.5"
 
   sugarradar-staging-glucose:
-    image: localhost:3000/sugarradar/glucose:latest
+    image: localhost:3000/sugarradar/glucose:0.0.1
     container_name: sugarradar-staging-glucose
     restart: unless-stopped
     ports:

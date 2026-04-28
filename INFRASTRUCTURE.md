@@ -227,13 +227,13 @@ Full staging environment for the SugarRadar app.
 
 | Container                      | Image                                                | Network(s)                              | Port (host) |
 |--------------------------------|------------------------------------------------------|-----------------------------------------|-------------|
-| `sugarradar-staging-sucrose`   | `localhost:3000/sugarradar/sucrose:latest`           | `shared-network`, `sugarradar-internal` | 8000        |
-| `sugarradar-sucrose-worker`    | `localhost:3000/sugarradar/sucrose-worker:latest`    | `sugarradar-internal`                   | —           |
-| `sugarradar-sucrose-scheduler` | `localhost:3000/sugarradar/sucrose-scheduler:latest` | `sugarradar-internal`                   | —           |
-| `sugarradar-staging-glucose`   | `localhost:3000/sugarradar/glucose:latest`           | `shared-network`, `sugarradar-internal` | 8001        |
+| `sugarradar-staging-sucrose`   | `localhost:3000/sugarradar/sucrose:0.0.1`            | `shared-network`, `sugarradar-internal` | 8000        |
+| `sugarradar-sucrose-worker`    | `localhost:3000/sugarradar/sucrose-worker:0.0.1`     | `sugarradar-internal`                   | —           |
+| `sugarradar-sucrose-scheduler` | `localhost:3000/sugarradar/sucrose-scheduler:0.0.1`  | `sugarradar-internal`                   | —           |
+| `sugarradar-staging-glucose`   | `localhost:3000/sugarradar/glucose:0.0.1`            | `shared-network`, `sugarradar-internal` | 8001        |
 | `sugarradar-staging-postgres`  | `postgres:16-alpine`                                 | `sugarradar-internal`                   | —           |
 | `sugarradar-staging-redis`     | `redis:7-alpine`                                     | `sugarradar-internal`                   | —           |
-| `sugarradar-staging-dbgate`    | `dbgate/dbgate:latest`                               | `shared-network`, `sugarradar-internal` | 8002        |
+| `sugarradar-staging-dbgate`    | `dbgate/dbgate:7.1.9`                                | `shared-network`, `sugarradar-internal` | 8002        |
 | `sugarradar-staging-asynqmon`  | `hibiken/asynqmon:0.7.2`                             | `shared-network`, `sugarradar-internal` | 8003        |
 
 #### Service Roles
@@ -290,14 +290,14 @@ Production environment for the SugarRadar app with automated database backups.
 
 | Container                          | Image                                                    | Network(s)                                   | Port (host) |
 |------------------------------------|----------------------------------------------------------|----------------------------------------------|-------------|
-| `sugarradar-production-sucrose`          | `localhost:3000/sugarradar/sucrose:stable`               | `shared-network`, `sugarradar-production-internal` | 8100        |
-| `sugarradar-production-sucrose-worker`   | `localhost:3000/sugarradar/sucrose-worker:stable`        | `sugarradar-production-internal`                   | —           |
-| `sugarradar-production-sucrose-scheduler`| `localhost:3000/sugarradar/sucrose-scheduler:stable`     | `sugarradar-production-internal`                   | —           |
-| `sugarradar-production-glucose`          | `localhost:3000/sugarradar/glucose:stable`               | `shared-network`, `sugarradar-production-internal` | 8101        |
+| `sugarradar-production-sucrose`          | `localhost:3000/sugarradar/sucrose:0.0.1`                | `shared-network`, `sugarradar-production-internal` | 8100        |
+| `sugarradar-production-sucrose-worker`   | `localhost:3000/sugarradar/sucrose-worker:0.0.1`         | `sugarradar-production-internal`                   | —           |
+| `sugarradar-production-sucrose-scheduler`| `localhost:3000/sugarradar/sucrose-scheduler:0.0.1`      | `sugarradar-production-internal`                   | —           |
+| `sugarradar-production-glucose`          | `localhost:3000/sugarradar/glucose:0.0.1`                | `shared-network`, `sugarradar-production-internal` | 8101        |
 | `sugarradar-production-postgres`         | `postgres:16-alpine`                                     | `sugarradar-production-internal`                   | —           |
 | `sugarradar-production-redis`            | `redis:7-alpine`                                         | `sugarradar-production-internal`                   | —           |
 | `sugarradar-production-pg-backup`        | `prodrigestivill/postgres-backup-local:16-alpine`        | `sugarradar-production-internal`                   | —           |
-| `sugarradar-production-dbgate`           | `dbgate/dbgate:latest`                                   | `shared-network`, `sugarradar-production-internal` | 8102        |
+| `sugarradar-production-dbgate`           | `dbgate/dbgate:7.1.9`                                    | `shared-network`, `sugarradar-production-internal` | 8102        |
 | `sugarradar-production-asynqmon`         | `hibiken/asynqmon:0.7.2`                                 | `shared-network`, `sugarradar-production-internal` | 8103        |
 
 #### Resource Limits
