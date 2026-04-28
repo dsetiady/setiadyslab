@@ -1,6 +1,6 @@
 services:
   sugarradar-production-sucrose:
-    image: localhost:3000/sugarradar/sucrose:0.0.1
+    image: localhost:3000/sugarradar/sucrose:0.0.2
     container_name: sugarradar-production-sucrose
     restart: unless-stopped
     ports:
@@ -49,7 +49,7 @@ services:
           cpus: "2.0"
 
   sugarradar-production-sucrose-worker:
-    image: localhost:3000/sugarradar/sucrose-worker:0.0.1
+    image: localhost:3000/sugarradar/sucrose-worker:0.0.2
     container_name: sugarradar-production-sucrose-worker
     restart: unless-stopped
     environment:
@@ -95,7 +95,7 @@ services:
           cpus: "2.0"
 
   sugarradar-production-sucrose-scheduler:
-    image: localhost:3000/sugarradar/sucrose-scheduler:0.0.1
+    image: localhost:3000/sugarradar/sucrose-scheduler:0.0.2
     container_name: sugarradar-production-sucrose-scheduler
     restart: unless-stopped
     environment:
@@ -245,7 +245,7 @@ services:
           cpus: "0.5"
 
   sugarradar-production-glucose:
-    image: localhost:3000/sugarradar/glucose:0.0.1
+    image: localhost:3000/sugarradar/glucose:0.0.2
     container_name: sugarradar-production-glucose
     restart: unless-stopped
     ports:
