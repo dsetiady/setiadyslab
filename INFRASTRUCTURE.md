@@ -160,16 +160,31 @@ SMTP_PORT=1025
 
 System monitoring. Not a Swarm stack — requires `--pid host` and `--privileged` which Swarm does not support.
 
+The dashboard is customized via `glances/glances.conf` in this repo. It tunes thresholds for the 22-core / 30 GiB host, disables noisy plugins (wifi, raid, smart, ports, irq, gpu, amps, ip, now, fs), filters network interfaces to physical NICs, and watches `/var/lib/docker/volumes` and `/var/lib/docker/containers` via the folders plugin.
+
+To deploy or update, copy the conf to the host and (re)create the container:
+
 ```bash
+# From repo root:
+scp glances/glances.conf dennysetiady@<host>:~/glances/glances.conf
+
+# On the host:
+docker stop glances && docker rm glances
 docker run -d --restart unless-stopped \
   --pid host --privileged \
+  --security-opt label=disable \
   --network shared-network \
+  -p 127.0.0.1:61208:61208 \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/os-release:/etc/os-release:ro \
-  -e GLANCES_OPT="-w" \
+  -v ~/glances/glances.conf:/etc/glances/glances.conf:ro \
+  -v /var/lib/docker:/var/lib/docker:ro \
+  -e GLANCES_OPT="-w -C /etc/glances/glances.conf" \
   --name glances \
   nicolargo/glances:latest-full
 ```
+
+After editing only `glances.conf`, `docker restart glances` is enough — no need to recreate.
 
 Cloudflare route: `glances.setiady.com` → `http://glances:61208` (via shared-network)
 
