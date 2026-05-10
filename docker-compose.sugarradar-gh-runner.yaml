@@ -1,0 +1,43 @@
+services:
+  sugarradar-gh-runner:
+    image: myoung34/github-runner:latest
+    container_name: sugarradar-gh-runner
+    hostname: homelab-1
+    privileged: true
+    environment:
+      - REPO_URL=https://github.com/lajuladotapp/sugarradar
+      - RUNNER_NAME=sugarradar-homelab-1
+      - RUNNER_SCOPE=repo
+      - LABELS=self-hosted,linux,kvm
+      - RUNNER_WORKDIR=/runner-work
+      - DISABLE_AUTO_UPDATE=true
+      - EPHEMERAL=false
+      - ACCESS_TOKEN_FILE=/run/secrets/gh_runner_pat
+    secrets:
+      - gh_runner_pat
+    volumes:
+      - sugarradar-gh-runner-work:/runner-work
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: any
+        delay: 10s
+      placement:
+        constraints:
+          - node.labels.kvm == true
+      resources:
+        limits:
+          memory: 16G
+          cpus: "4.0"
+        reservations:
+          memory: 8G
+          cpus: "2.0"
+
+volumes:
+  sugarradar-gh-runner-work:
+
+secrets:
+  gh_runner_pat:
+    external: true
+    name: setiadyslab_sugarradar_action_runner

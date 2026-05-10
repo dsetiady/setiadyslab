@@ -373,6 +373,48 @@ docker exec -i sugarradar-production-postgres psql -U <user> -d <db> < backup_fi
 
 ---
 
+### 10. SugarRadar GitHub Runner (`docker-compose.sugarradar-gh-runner.yaml`)
+
+Self-hosted GitHub Actions runner registered to the `lajuladotapp/sugarradar` repo. Runs in a privileged container (required for KVM/nested virtualization workloads). No host ports — runner reaches GitHub via outbound HTTPS only.
+
+#### Services
+
+| Container              | Image                          | Network(s) | Port (host) |
+|------------------------|--------------------------------|------------|-------------|
+| `sugarradar-gh-runner` | `myoung34/github-runner:latest` | default    | —           |
+
+#### Resource Limits
+
+| Container              | Memory (limit / reservation) | CPU (limit / reservation) |
+|------------------------|------------------------------|---------------------------|
+| `sugarradar-gh-runner` | 16 GB / 8 GB                 | 4.0 / 2.0                 |
+
+#### Placement
+
+Pinned to nodes with `node.labels.kvm == true`. Label the manager node before deploying:
+
+```bash
+docker node update --label-add kvm=true <node-id>
+```
+
+#### Required Docker Secret
+
+| Secret                                  | Purpose                                                       |
+|-----------------------------------------|---------------------------------------------------------------|
+| `setiadyslab_sugarradar_action_runner`  | GitHub PAT (repo scope) used to register the runner — created in Portainer; aliased inside the service as `gh_runner_pat` (mounted at `/run/secrets/gh_runner_pat`) |
+
+#### Key Env Vars (configured in the compose file)
+
+| Variable        | Value                                                |
+|-----------------|------------------------------------------------------|
+| `REPO_URL`      | `https://github.com/lajuladotapp/sugarradar`         |
+| `RUNNER_NAME`   | `sugarradar-homelab-1`                               |
+| `RUNNER_SCOPE`  | `repo`                                               |
+| `LABELS`        | `self-hosted,linux,kvm`                              |
+| `EPHEMERAL`     | `false` (long-lived runner)                          |
+
+---
+
 ## Remote Access Summary
 
 | Access Method | URL                             | Notes                        |
@@ -465,3 +507,4 @@ When setting up from scratch, deploy in this order:
 9. Deploy **observability** (Loki + Grafana)
 10. Deploy **sugarradar-staging**
 11. Deploy **sugarradar-production**
+12. Deploy **sugarradar-gh-runner** (after labeling node with `kvm=true`)
