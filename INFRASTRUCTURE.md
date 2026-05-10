@@ -408,7 +408,7 @@ docker node update --label-add kvm=true <node-id>
 | Variable        | Value                                                |
 |-----------------|------------------------------------------------------|
 | `REPO_URL`      | `https://github.com/lajuladotapp/sugarradar`         |
-| `RUNNER_NAME`   | `sugarradar-homelab-1`                               |
+| `RUNNER_NAME`   | `sugarradar-setiadyslabs-1`                          |
 | `RUNNER_SCOPE`  | `repo`                                               |
 | `LABELS`        | `self-hosted,linux,kvm`                              |
 | `EPHEMERAL`     | `false` (long-lived runner)                          |

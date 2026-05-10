@@ -17,7 +17,7 @@ services:
     command: ["./bin/Runner.Listener", "run", "--startuptype", "service"]
     environment:
       - REPO_URL=https://github.com/lajuladotapp/sugarradar
-      - RUNNER_NAME=sugarradar-homelab-1
+      - RUNNER_NAME=sugarradar-setiadyslabs-1
       - RUNNER_SCOPE=repo
       - LABELS=self-hosted,linux,kvm
       - RUNNER_WORKDIR=/runner-work
