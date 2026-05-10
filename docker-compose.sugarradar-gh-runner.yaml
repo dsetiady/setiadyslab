@@ -6,10 +6,13 @@ services:
     privileged: true
     # The image's entrypoint reads $ACCESS_TOKEN directly and does not support the
     # _FILE suffix convention, so we wrap it to load the PAT from the swarm secret.
+    # The trailing "$$@" forwards the image's CMD (./bin/Runner.Listener ...) so the
+    # listener actually starts after registration.
     entrypoint:
       - /bin/bash
       - -c
-      - export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh
+      - export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh "$$@"
+      - bash
     environment:
       - REPO_URL=https://github.com/lajuladotapp/sugarradar
       - RUNNER_NAME=sugarradar-homelab-1
