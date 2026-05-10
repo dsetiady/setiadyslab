@@ -9,7 +9,7 @@ services:
     entrypoint:
       - /bin/bash
       - -c
-      - export ACCESS_TOKEN="$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh
+      - export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh
     environment:
       - REPO_URL=https://github.com/lajuladotapp/sugarradar
       - RUNNER_NAME=sugarradar-homelab-1
