@@ -26,6 +26,7 @@ services:
       - gh_runner_pat
     volumes:
       - sugarradar-gh-runner-work:/runner-work
+      - /dev/kvm:/dev/kvm
     deploy:
       mode: replicated
       replicas: 1
