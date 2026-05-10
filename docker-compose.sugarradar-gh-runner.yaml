@@ -27,6 +27,7 @@ services:
     volumes:
       - sugarradar-gh-runner-work:/runner-work
       - /dev/kvm:/dev/kvm
+      - /var/run/docker.sock:/var/run/docker.sock
     deploy:
       mode: replicated
       replicas: 1
