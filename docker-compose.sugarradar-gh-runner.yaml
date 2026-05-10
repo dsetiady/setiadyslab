@@ -27,6 +27,11 @@ services:
     volumes:
       - sugarradar-gh-runner-work:/runner-work
       - /var/run/docker.sock:/var/run/docker.sock
+      # Bind ensures the /dev/kvm node is actually present in the container.
+      # Swarm strips `devices:` silently, so this volume bind is what makes
+      # the node visible; the `devices:` entry below is a cgroup hint for
+      # non-Swarm runtimes.
+      - /dev/kvm:/dev/kvm
     devices:
       - "/dev/kvm:/dev/kvm:rwm"
     cap_add:
