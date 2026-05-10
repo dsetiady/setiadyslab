@@ -392,6 +392,8 @@ docker exec -i sugarradar-production-postgres psql -U <user> -d <db> < backup_fi
 
 Self-hosted GitHub Actions runner registered to the `lajuladotapp/sugarradar` repo. Runs in a privileged container (required for KVM/nested virtualization workloads). No host ports — runner reaches GitHub via outbound HTTPS only.
 
+**Not a Swarm stack.** Swarm strips the `devices:` and `device_cgroup_rules:` compose keys, so it can't grant cgroup access to `/dev/kvm`. On cgroup v2 hosts (Ubuntu 22.04+), `privileged: true` alone is not enough — device control is BPF-managed and requires an explicit cgroup rule. We therefore deploy this stack via plain `docker compose up -d` on the host, not via Portainer/Swarm.
+
 #### Services
 
 | Container              | Image                          | Network(s) | Port (host) |
@@ -400,23 +402,19 @@ Self-hosted GitHub Actions runner registered to the `lajuladotapp/sugarradar` re
 
 #### Resource Limits
 
-| Container              | Memory (limit / reservation) | CPU (limit / reservation) |
-|------------------------|------------------------------|---------------------------|
-| `sugarradar-gh-runner` | 16 GB / 8 GB                 | 4.0 / 2.0                 |
+| Container              | Memory limit | CPU limit |
+|------------------------|--------------|-----------|
+| `sugarradar-gh-runner` | 16 GB        | 4.0       |
 
-#### Placement
+#### PAT secret
 
-Pinned to nodes with `node.labels.kvm == true`. Label the manager node before deploying:
+The runner needs a GitHub fine-grained PAT (repo Administration: Read/Write) to register itself. Store it on the host at `~/secrets/gh_runner_pat`, root-owned, mode `0600`. Compose mounts it into the container at `/run/secrets/gh_runner_pat`.
 
 ```bash
-docker node update --label-add kvm=true <node-id>
+mkdir -p ~/secrets && chmod 700 ~/secrets
+printf '%s' "<your-PAT>" > ~/secrets/gh_runner_pat
+chmod 600 ~/secrets/gh_runner_pat
 ```
-
-#### Required Docker Secret
-
-| Secret                                  | Purpose                                                       |
-|-----------------------------------------|---------------------------------------------------------------|
-| `setiadyslab_sugarradar_action_runner`  | GitHub PAT (repo scope) used to register the runner — created in Portainer; aliased inside the service as `gh_runner_pat` (mounted at `/run/secrets/gh_runner_pat`) |
 
 #### Key Env Vars (configured in the compose file)
 
@@ -426,7 +424,18 @@ docker node update --label-add kvm=true <node-id>
 | `RUNNER_NAME`   | `sugarradar-setiadyslabs-1`                          |
 | `RUNNER_SCOPE`  | `repo`                                               |
 | `LABELS`        | `self-hosted,linux,kvm`                              |
-| `EPHEMERAL`     | `false` (long-lived runner)                          |
+
+#### Deploy / update
+
+From the repo root on the host:
+
+```bash
+docker compose -f docker-compose.sugarradar-gh-runner.yaml up -d
+docker compose -f docker-compose.sugarradar-gh-runner.yaml logs -f
+docker compose -f docker-compose.sugarradar-gh-runner.yaml down  # to stop
+```
+
+The container is still visible in Portainer's "Containers" tab — you just can't manage the *stack* from Portainer.
 
 ---
 
@@ -522,4 +531,4 @@ When setting up from scratch, deploy in this order:
 9. Deploy **observability** (Loki + Grafana)
 10. Deploy **sugarradar-staging**
 11. Deploy **sugarradar-production**
-12. Deploy **sugarradar-gh-runner** (after labeling node with `kvm=true`)
+12. Deploy **sugarradar-gh-runner** (standalone `docker compose up -d` — not a Swarm stack)

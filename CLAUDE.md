@@ -2,7 +2,7 @@
 
 ## What this repo is
 
-Docker Swarm stack definitions for a single-node Intel NUC homelab. All stacks are deployed via Portainer. See `INFRASTRUCTURE.md` for the full reference.
+Docker Swarm stack definitions for a single-node Intel NUC homelab. Most stacks are deployed via Portainer; a few (glances, sugarradar-gh-runner) need privileges Swarm doesn't honor and run as standalone containers. See `INFRASTRUCTURE.md` for the full reference.
 
 ## Key facts
 
@@ -25,6 +25,7 @@ Docker Swarm stack definitions for a single-node Intel NUC homelab. All stacks a
 - Overlay networks are used for all inter-service communication
 - Secrets and env vars are set in Portainer — never committed to this repo
 - Glances runs as a standalone `docker run` (not a Swarm stack) due to `--pid host` and `--privileged` requirements
+- `sugarradar-gh-runner` runs as a standalone `docker compose up -d` (not a Swarm stack) because Swarm strips `device_cgroup_rules:`, which is required for `/dev/kvm` access on cgroup v2 hosts. Its PAT lives at `~/secrets/gh_runner_pat` (mode 0600) on the host, not in a swarm secret
 
 ## Port range scheme
 

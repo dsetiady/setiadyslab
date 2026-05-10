@@ -1,13 +1,23 @@
+# Non-swarm compose file. Run with `docker compose up -d` on the host
+# (NOT `docker stack deploy`). Swarm strips both `devices:` and
+# `device_cgroup_rules:`, so the runner can't get cgroup access to /dev/kvm
+# as a swarm service. See INFRASTRUCTURE.md for deployment steps.
+name: sugarradar-gh-runner
+
 services:
   sugarradar-gh-runner:
     image: myoung34/github-runner:latest
     container_name: sugarradar-gh-runner
     hostname: homelab-1
+    restart: unless-stopped
     privileged: true
-    # The image's entrypoint reads $ACCESS_TOKEN directly and does not support the
-    # _FILE suffix convention, so we wrap it to load the PAT from the swarm secret.
-    # The trailing "$$@" forwards the image's CMD (./bin/Runner.Listener ...) so the
-    # listener actually starts after registration.
+    mem_limit: 16g
+    cpus: 4.0
+    # The image's entrypoint reads $ACCESS_TOKEN directly and does not support
+    # the _FILE suffix convention, so we wrap it to load the PAT from the
+    # bind-mounted secret. The trailing "$$@" forwards the image's CMD
+    # (./bin/Runner.Listener ...) so the listener actually starts after
+    # registration.
     entrypoint:
       - /bin/bash
       - -c
@@ -27,39 +37,21 @@ services:
     volumes:
       - sugarradar-gh-runner-work:/runner-work
       - /var/run/docker.sock:/var/run/docker.sock
-      # The volume bind makes the /dev/kvm node visible in the container.
-      # Swarm strips `devices:` silently, so we use device_cgroup_rules
-      # below to grant cgroup access — without it, opening /dev/kvm fails
-      # with EPERM even though we're privileged + root.
       - /dev/kvm:/dev/kvm
     # Major 10, minor 232 = /dev/kvm (verify with `ls -la /dev/kvm` on host).
+    # This is what actually grants cgroup access — privileged alone is not
+    # enough on cgroup v2 hosts, where device control is BPF-managed.
     device_cgroup_rules:
       - 'c 10:232 rwm'
     cap_add:
       - SYS_ADMIN
     security_opt:
       - "seccomp=unconfined"
-    deploy:
-      mode: replicated
-      replicas: 1
-      restart_policy:
-        condition: any
-        delay: 10s
-      placement:
-        constraints:
-          - node.labels.kvm == true
-      resources:
-        limits:
-          memory: 16G
-          cpus: "4.0"
-        reservations:
-          memory: 8G
-          cpus: "2.0"
 
 volumes:
   sugarradar-gh-runner-work:
 
 secrets:
   gh_runner_pat:
-    external: true
-    name: setiadyslab_sugarradar_action_runner
+    # PAT lives at this path on the host, mode 0600. Keep it out of the repo.
+    file: /home/dennysetiady/secrets/gh_runner_pat
