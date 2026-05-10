@@ -17,7 +17,6 @@ services:
       - LABELS=self-hosted,linux,kvm
       - RUNNER_WORKDIR=/runner-work
       - DISABLE_AUTO_UPDATE=true
-      - EPHEMERAL=false
     secrets:
       - gh_runner_pat
     volumes:
