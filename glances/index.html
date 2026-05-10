@@ -14,11 +14,13 @@
   </script>
   <script src="static/glances.js" defer></script>
   <style>
-    /* Mirror the row-hover effect that the processlist plugin has, so the
-       containers panel feels the same when you mouse over rows. */
-    .plugin-containers .table-row:hover,
-    .plugin-containers tbody tr:hover {
-      background-color: rgba(255, 255, 255, 0.08) !important;
+    /* Bootstrap's `table-hover` is on both #containers and #processlist tables
+       but the dark-theme hover color is so faint it reads as no effect. Force
+       a stronger highlight on the containers panel rows. */
+    section#containers tbody tr:hover,
+    section#containers .table-row:hover {
+      background-color: rgba(80, 160, 255, 0.18) !important;
+      cursor: default;
     }
   </style>
 </head>
