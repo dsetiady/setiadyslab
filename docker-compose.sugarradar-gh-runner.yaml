@@ -27,13 +27,14 @@ services:
     volumes:
       - sugarradar-gh-runner-work:/runner-work
       - /var/run/docker.sock:/var/run/docker.sock
-      # Bind ensures the /dev/kvm node is actually present in the container.
-      # Swarm strips `devices:` silently, so this volume bind is what makes
-      # the node visible; the `devices:` entry below is a cgroup hint for
-      # non-Swarm runtimes.
+      # The volume bind makes the /dev/kvm node visible in the container.
+      # Swarm strips `devices:` silently, so we use device_cgroup_rules
+      # below to grant cgroup access — without it, opening /dev/kvm fails
+      # with EPERM even though we're privileged + root.
       - /dev/kvm:/dev/kvm
-    devices:
-      - "/dev/kvm:/dev/kvm:rwm"
+    # Major 10, minor 232 = /dev/kvm (verify with `ls -la /dev/kvm` on host).
+    device_cgroup_rules:
+      - 'c 10:232 rwm'
     cap_add:
       - SYS_ADMIN
     security_opt:
