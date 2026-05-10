@@ -160,7 +160,7 @@ SMTP_PORT=1025
 
 System monitoring. Not a Swarm stack — requires `--pid host` and `--privileged` which Swarm does not support.
 
-The dashboard is customized via `glances/glances.conf` in this repo. It tunes thresholds for the 22-core / 30 GiB host, disables noisy plugins (wifi, raid, smart, ports, irq, gpu, amps, ip, now, fs), filters network interfaces to physical NICs, and watches `/var/lib/docker/volumes` and `/var/lib/docker/containers` via the folders plugin.
+The dashboard is customized via `glances/glances.conf` in this repo. It tunes thresholds for the 22-core / 30 GiB host, disables noisy plugins (wifi, raid, smart, ports, irq, gpu, amps, ip, now), filters network interfaces to physical NICs, watches `/var/lib/docker/volumes` and `/var/lib/docker/containers` via the folders plugin, and shows host filesystem usage by bind-mounting `/` at `/rootfs:ro` (so the FS panel reports the real 1.8 TB disk, not the container's overlay).
 
 To deploy or update, copy the conf to the host and (re)create the container:
 
@@ -179,6 +179,7 @@ docker run -d --restart unless-stopped \
   -v /etc/os-release:/etc/os-release:ro \
   -v ~/glances/glances.conf:/etc/glances/glances.conf:ro \
   -v /var/lib/docker:/var/lib/docker:ro \
+  -v /:/rootfs:ro \
   -e GLANCES_OPT="-w -C /etc/glances/glances.conf" \
   --name glances \
   nicolargo/glances:latest-full
