@@ -4,6 +4,12 @@ services:
     container_name: sugarradar-gh-runner
     hostname: homelab-1
     privileged: true
+    # The image's entrypoint reads $ACCESS_TOKEN directly and does not support the
+    # _FILE suffix convention, so we wrap it to load the PAT from the swarm secret.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - export ACCESS_TOKEN="$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh
     environment:
       - REPO_URL=https://github.com/lajuladotapp/sugarradar
       - RUNNER_NAME=sugarradar-homelab-1
@@ -12,7 +18,6 @@ services:
       - RUNNER_WORKDIR=/runner-work
       - DISABLE_AUTO_UPDATE=true
       - EPHEMERAL=false
-      - ACCESS_TOKEN_FILE=/run/secrets/gh_runner_pat
     secrets:
       - gh_runner_pat
     volumes:
