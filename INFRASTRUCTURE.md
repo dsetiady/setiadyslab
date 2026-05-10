@@ -162,11 +162,14 @@ System monitoring. Not a Swarm stack — requires `--pid host` and `--privileged
 
 The dashboard is customized via `glances/glances.conf` in this repo. It tunes thresholds for the 22-core / 30 GiB host, disables noisy plugins (wifi, raid, smart, ports, irq, gpu, amps, ip, now), filters network interfaces to physical NICs, watches `/var/lib/docker/volumes` and `/var/lib/docker/containers` via the folders plugin, and shows host filesystem usage by bind-mounting `/` at `/rootfs:ro` (so the FS panel reports the real 1.8 TB disk, not the container's overlay).
 
+UI tweaks live in `glances/index.html` — a custom version of the SPA shell with a `<style>` block injecting CSS that Glances' bundled JS doesn't expose otherwise (currently: row-hover highlight on the containers panel, matching the processlist behavior).
+
 To deploy or update, copy the conf to the host and (re)create the container:
 
 ```bash
 # From repo root:
 scp glances/glances.conf dennysetiady@<host>:~/glances/glances.conf
+scp glances/index.html  dennysetiady@<host>:~/glances/index.html
 
 # On the host:
 docker stop glances && docker rm glances
@@ -178,6 +181,7 @@ docker run -d --restart unless-stopped \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -v /etc/os-release:/etc/os-release:ro \
   -v ~/glances/glances.conf:/etc/glances/glances.conf:ro \
+  -v ~/glances/index.html:/app/glances/outputs/static/templates/index.html:ro \
   -v /var/lib/docker:/var/lib/docker:ro \
   -v /:/rootfs:ro \
   -e GLANCES_OPT="-w -C /etc/glances/glances.conf" \
