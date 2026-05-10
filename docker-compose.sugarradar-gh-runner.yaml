@@ -13,6 +13,8 @@ services:
       - -c
       - export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh "$$@"
       - bash
+    # Compose's entrypoint override clears the image CMD, so re-declare it.
+    command: ["./bin/Runner.Listener", "run", "--startuptype", "service"]
     environment:
       - REPO_URL=https://github.com/lajuladotapp/sugarradar
       - RUNNER_NAME=sugarradar-homelab-1
