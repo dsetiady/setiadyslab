@@ -26,8 +26,13 @@ services:
       - gh_runner_pat
     volumes:
       - sugarradar-gh-runner-work:/runner-work
-      - /dev/kvm:/dev/kvm
       - /var/run/docker.sock:/var/run/docker.sock
+    devices:
+      - "/dev/kvm:/dev/kvm:rwm"
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - "seccomp=unconfined"
     deploy:
       mode: replicated
       replicas: 1
