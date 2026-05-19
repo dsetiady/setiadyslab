@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 #
-# Restart the sugarradar-gh-runner container and prune orphaned
-# `github_network_*` bridges left behind by GitHub Actions jobs.
+# Detach the sugarradar-gh-runner from orphaned `github_network_*` bridges
+# left behind by GitHub Actions jobs, then remove the networks.
 #
-# The runner stays attached to every per-job network it ever orchestrated,
-# so `docker network prune` cannot remove them on its own. Restarting the
-# runner detaches it from all of them; prune then sweeps them.
+# `docker restart` preserves network attachments, so prune alone cannot
+# reclaim these networks — the runner remains the lone endpoint. We must
+# explicitly `docker network disconnect` the runner from each idle network
+# before removing it.
+#
+# A network with more than one container attached belongs to a running job
+# and is skipped (use --force to override).
 #
 # Usage:
-#   ./cleanup-gh-runner-networks.sh          # abort if a job is running
-#   ./cleanup-gh-runner-networks.sh --force  # restart even if a job is running
+#   ./cleanup-gh-runner-networks.sh          # skip networks with a live job
+#   ./cleanup-gh-runner-networks.sh --force  # detach even mid-job networks
 
 set -euo pipefail
 
@@ -30,13 +34,14 @@ fi
 
 echo "Found ${#NETWORKS[@]} github_network_* network(s)."
 
-# A network with more than just the runner attached means an Actions job is
-# currently using it (service containers like postgres/redis are still up).
 LIVE=()
+IDLE=()
 for net in "${NETWORKS[@]}"; do
   count=$(docker network inspect "$net" --format '{{len .Containers}}')
   if [ "$count" -gt 1 ]; then
     LIVE+=("$net")
+  else
+    IDLE+=("$net")
   fi
 done
 
@@ -50,22 +55,33 @@ if [ "${#LIVE[@]}" -gt 0 ]; then
   done
   if [ "$FORCE" != "--force" ]; then
     echo
-    echo "Refusing to restart the runner mid-job. Re-run with --force to override."
-    exit 2
+    echo "Skipping live networks. Re-run with --force to clean them too."
+  else
+    echo
+    echo "--force given; will also clean live networks."
+    IDLE+=("${LIVE[@]}")
   fi
+fi
+
+if [ "${#IDLE[@]}" -eq 0 ]; then
   echo
-  echo "--force given; proceeding anyway."
+  echo "Nothing to clean."
+  exit 0
 fi
 
 echo
-echo "Restarting $RUNNER ..."
-docker restart "$RUNNER" >/dev/null
-echo "Runner restarted."
-
-echo
-echo "Pruning unused networks ..."
-docker network prune -f
+echo "Disconnecting $RUNNER from ${#IDLE[@]} network(s) and removing them ..."
+REMOVED=0
+FAILED=0
+for net in "${IDLE[@]}"; do
+  docker network disconnect -f "$net" "$RUNNER" >/dev/null 2>&1 || true
+  if docker network rm "$net" >/dev/null 2>&1; then
+    REMOVED=$((REMOVED + 1))
+  else
+    FAILED=$((FAILED + 1))
+  fi
+done
 
 REMAINING=$(docker network ls --filter name=github_network --format '{{.Name}}' | wc -l)
 echo
-echo "Done. Remaining github_network_* networks: $REMAINING"
+echo "Done. Removed $REMOVED network(s); $FAILED failed; $REMAINING github_network_* network(s) remain."
