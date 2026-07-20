@@ -19,6 +19,7 @@ Docker Swarm homelab running on a single Intel NUC, managed via Portainer. All e
 | [`docker-compose.sugarradar-production.yaml`](docker-compose.sugarradar-production.yaml) | SugarRadar production environment |
 | [`docker-compose.sugarradar-gh-runner.yaml`](docker-compose.sugarradar-gh-runner.yaml) | Self-hosted GitHub Actions runner for sugarradar |
 | [`docker-compose.observability.yaml`](docker-compose.observability.yaml)            | Loki + Grafana log aggregation       |
+| [`docker-compose.beszel.yaml`](docker-compose.beszel.yaml)                          | Beszel host + Docker monitoring      |
 
 ## Quick Reference
 

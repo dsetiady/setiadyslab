@@ -1,0 +1,75 @@
+# Beszel — lightweight host + Docker monitoring (glances replacement)
+# Shared homelab monitoring dashboard.
+#
+# Deploy the HUB via Portainer as stack "beszel".
+# The AGENT runs as a standalone container (see block at the bottom of this
+# file) because it needs host networking + docker.sock, which Swarm strips —
+# the same reason `glances` and `sugarradar-gh-runner` run standalone.
+#
+# Architecture:
+#   beszel-agent (host, collects metrics) ──SSH──▶ beszel hub (web UI + DB)
+#   The hub connects OUT to the agent at host.docker.internal:45876.
+#
+# Prerequisites: none (no external Portainer Configs needed — unlike the
+# observability stack, Beszel stores everything in its own volume).
+
+services:
+  beszel:
+    image: henrygd/beszel:0.18.7
+    container_name: beszel
+    restart: unless-stopped
+    # host.docker.internal → host gateway, so the hub can reach the
+    # standalone agent that listens on the host at :45876.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - beszel-data:/beszel_data
+    ports:
+      # Cloudflare Tunnel (cloudflared on host) → localhost:9002
+      - "9002:8090"
+    networks:
+      - shared-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: "0.5"
+
+volumes:
+  beszel-data:
+
+networks:
+  shared-network:
+    external: true
+
+# ============================================================
+# BESZEL AGENT — standalone container (NOT a Swarm service)
+# ============================================================
+# Swarm ignores `network_mode: host`, so the agent runs via `docker run`
+# on the host, like glances. Run it AFTER the hub is up and you have the
+# hub's public key.
+#
+# 1. Deploy the hub stack, open https://beszel.setiady.com, create the
+#    admin account, click "Add System". Copy the public KEY it shows.
+#
+# 2. On the host, run the agent with that key:
+#
+#   docker run -d --restart unless-stopped \
+#     --name beszel-agent \
+#     --network host \
+#     -v /var/run/docker.sock:/var/run/docker.sock:ro \
+#     -e LISTEN=45876 \
+#     -e KEY="<paste the ssh-ed25519 public key from the hub UI>" \
+#     --memory 128m \
+#     henrygd/beszel-agent:0.18.7
+#
+#   (Host networking lets the agent report real NIC traffic and host
+#   sensors — including the NUC's CPU temperature / fan RPM. /sys is
+#   mounted read-only by default so hwmon sensors are visible.)
+#
+# 3. Back in the hub UI, finish adding the system with:
+#      Host / IP:  host.docker.internal
+#      Port:       45876
+#    The status should go green within a few seconds.
+#
+# Cloudflare route: beszel.setiady.com → localhost:9002

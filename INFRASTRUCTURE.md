@@ -80,6 +80,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 8102      | 3000           | `sugarradar-production-dbgate` DB admin     | sugarradar-production |
 | 8103      | 8080           | `sugarradar-production-asynqmon`            | sugarradar-production |
 | 9001      | 3000           | `observability-grafana` log dashboard | observability      |
+| 9002      | 8090           | `beszel` monitoring dashboard         | beszel             |
 
 ### Internal-Only (no host binding)
 
@@ -521,6 +522,37 @@ Cloudflare route: `grafana.setiady.com` → `localhost:9001`
 
 ---
 
+### 11. Beszel (`docker-compose.beszel.yaml`)
+
+Lightweight host + Docker monitoring — the glances replacement. The **hub** (web UI + DB) runs as a Swarm stack; the **agent** (collector) runs as a standalone container because it needs host networking + docker.sock, which Swarm strips (like glances / gh-runner).
+
+#### Services
+
+| Container      | Image                         | Network(s)       | Port (host)  | Deploy                   |
+|----------------|-------------------------------|------------------|--------------|--------------------------|
+| `beszel`       | `henrygd/beszel:0.18.7`       | `shared-network` | 9002         | Swarm stack              |
+| `beszel-agent` | `henrygd/beszel-agent:0.18.7` | host networking  | 45876 (host) | Standalone `docker run`  |
+
+#### Resource Limits
+
+| Container      | Memory | CPU |
+|----------------|--------|-----|
+| `beszel`       | 256 MB | 0.5 |
+| `beszel-agent` | 128 MB | —   |
+
+Cloudflare route: `beszel.setiady.com` → `localhost:9002`
+
+#### Setup
+
+1. Deploy the `beszel` hub stack (Portainer).
+2. Open `https://beszel.setiady.com`, create the admin account, click **Add System**, copy the public key.
+3. On the host, run the agent (see the commented `docker run` block in `docker-compose.beszel.yaml`) with that `KEY`.
+4. In the hub, add the system with host `host.docker.internal`, port `45876`. The hub reaches the agent via a `host-gateway` entry.
+
+The agent reports host CPU / mem / disk / network **and sensors** — including the NUC's CPU temperature and fan RPM.
+
+---
+
 ## Stack Deployment Order
 
 When setting up from scratch, deploy in this order:
@@ -537,3 +569,4 @@ When setting up from scratch, deploy in this order:
 10. Deploy **sugarradar-staging**
 11. Deploy **sugarradar-production**
 12. Deploy **sugarradar-gh-runner** (standalone `docker compose up -d` — not a Swarm stack)
+13. Deploy **beszel** (hub as Swarm stack; agent as standalone `docker run` — not a Swarm stack)
