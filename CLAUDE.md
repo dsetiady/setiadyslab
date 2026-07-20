@@ -2,7 +2,7 @@
 
 ## What this repo is
 
-Docker Swarm stack definitions for a single-node Intel NUC homelab. Most stacks are deployed via Portainer; a few (glances, sugarradar-gh-runner) need privileges Swarm doesn't honor and run as standalone containers. See `INFRASTRUCTURE.md` for the full reference.
+Docker Swarm stack definitions for a single-node Intel NUC homelab. Most stacks are deployed via Portainer; a few (glances, sugarradar-gh-runner, the beszel agent) need privileges Swarm doesn't honor and run as standalone containers. See `INFRASTRUCTURE.md` for the full reference.
 
 ## Key facts
 
@@ -26,6 +26,7 @@ Docker Swarm stack definitions for a single-node Intel NUC homelab. Most stacks 
 - Secrets and env vars are set in Portainer — never committed to this repo
 - Glances runs as a standalone `docker run` (not a Swarm stack) due to `--pid host` and `--privileged` requirements
 - `sugarradar-gh-runner` runs as a standalone `docker compose up -d` (not a Swarm stack) because Swarm strips `device_cgroup_rules:`, which is required for `/dev/kvm` access on cgroup v2 hosts. Its PAT lives at `~/secrets/gh_runner_pat` (mode 0600) on the host, not in a swarm secret
+- Beszel: the **hub** runs as a Swarm stack (`docker-compose.beszel.yaml`), but the **agent** runs as a standalone `docker run` with `--network host` (Swarm ignores host networking). The hub reaches the agent via a `host.docker.internal:host-gateway` entry at port 45876
 
 ## Port range scheme
 
@@ -62,6 +63,7 @@ Ports already in use on the host — do not reassign:
 | 8102 | dbgate (prod)         |
 | 8103 | asynqmon (prod)       |
 | 9001 | observability-grafana |
+| 9002 | beszel hub            |
 
 ## Documentation maintenance
 
