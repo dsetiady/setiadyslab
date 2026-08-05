@@ -4,7 +4,7 @@ services:
     container_name: lajuladotapp
     restart: unless-stopped
     ports:
-      - "8200:3000"
+      - "8200:80"
     networks:
       - shared-network
 

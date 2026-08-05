@@ -80,7 +80,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 8101      | 80             | `sugarradar-production-glucose` frontend    | sugarradar-production |
 | 8102      | 3000           | `sugarradar-production-dbgate` DB admin     | sugarradar-production |
 | 8103      | 8080           | `sugarradar-production-asynqmon`            | sugarradar-production |
-| 8200      | 3000           | `lajula.app` web service              | lajuladotapp       |
+| 8200      | 80             | `lajuladotapp` web service            | lajuladotapp       |
 | 9001      | 3000           | `observability-grafana` log dashboard | observability      |
 | 9002      | 8090           | `beszel` monitoring dashboard         | beszel             |
 
@@ -200,11 +200,11 @@ Cloudflare route: `glances.setiady.com` → `http://glances:61208` (via shared-n
 
 ### 5. lajula.app (`docker-compose.lajuladotapp.yaml`)
 
-| Container    | Image                                            | Network          | Port (host) |
-|--------------|--------------------------------------------------|------------------|-------------|
-| `lajula.app` | `localhost:3000/lajuladotapp/lajuladotapp:latest` | `shared-network` | 8200        |
+| Container      | Image                                             | Network          | Port (host) |
+|----------------|---------------------------------------------------|------------------|-------------|
+| `lajuladotapp` | `localhost:3000/lajuladotapp/lajuladotapp:latest` | `shared-network` | 8200        |
 
-Port range: **8200–8299**. The app listens on container port `3000`, published on host `8200`.
+Port range: **8200–8299**. The image is nginx and listens on container port `80`, published on host `8200`.
 
 Cloudflare route: `lajula.app` → `localhost:8200`
 
