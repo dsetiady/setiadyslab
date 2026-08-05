@@ -59,6 +59,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 4000–4099 | Automation & workflow tools                                   |
 | 8000–8099 | SugarRadar Staging                                           |
 | 8100–8199 | SugarRadar Production                                        |
+| 8200–8299 | lajula.app                                                   |
 | 9000–9099 | Ops tools *(portainer stays at 9443 — standard portainer port)* |
 
 ### Host-Exposed Ports
@@ -79,6 +80,7 @@ All public hostnames are configured in **Cloudflare Zero Trust → Networks → 
 | 8101      | 80             | `sugarradar-production-glucose` frontend    | sugarradar-production |
 | 8102      | 3000           | `sugarradar-production-dbgate` DB admin     | sugarradar-production |
 | 8103      | 8080           | `sugarradar-production-asynqmon`            | sugarradar-production |
+| 8200      | 3000           | `lajula.app` web service              | lajuladotapp       |
 | 9001      | 3000           | `observability-grafana` log dashboard | observability      |
 | 9002      | 8090           | `beszel` monitoring dashboard         | beszel             |
 
@@ -196,13 +198,15 @@ Cloudflare route: `glances.setiady.com` → `http://glances:61208` (via shared-n
 
 ---
 
-### 5. lajula.app (`docker-compose.lajula.app.yaml`)
+### 5. lajula.app (`docker-compose.lajuladotapp.yaml`)
 
-| Container      | Image                                      | Network          |
-|----------------|--------------------------------------------|------------------|
-| `lajuladotapp` | `registry.setiady.com/lajuladotapp:v1.0.0` | `shared-network` |
+| Container    | Image                                            | Network          | Port (host) |
+|--------------|--------------------------------------------------|------------------|-------------|
+| `lajula.app` | `localhost:3000/lajuladotapp/lajuladotapp:latest` | `shared-network` | 8200        |
 
-Cloudflare route: `lajula.app` → `http://lajuladotapp:<port>` (via shared-network)
+Port range: **8200–8299**. The app listens on container port `3000`, published on host `8200`.
+
+Cloudflare route: `lajula.app` → `localhost:8200`
 
 ---
 
@@ -214,7 +218,7 @@ Workflow automation platform backed by PostgreSQL.
 
 | Container     | Image                | Network(s)                     | Port (host) |
 |---------------|----------------------|--------------------------------|-------------|
-| `n8n`         | `n8nio/n8n:latest`   | `shared-network`, `n8n-internal` | 8200        |
+| `n8n`         | `n8nio/n8n:latest`   | `shared-network`, `n8n-internal` | 4000        |
 | `n8n-postgres`| `postgres:16-alpine` | `n8n-internal`                 | —           |
 
 Cloudflare route: `n8n.setiady.com` → `localhost:4000`
@@ -455,6 +459,7 @@ The container is still visible in Portainer's "Containers" tab — you just can'
 | Glances       | `https://glances.setiady.com`   | System monitoring            |
 | Mailpit       | `https://mail.setiady.com`      | Shared dev mail UI           |
 | n8n           | `https://n8n.setiady.com`       | Workflow automation          |
+| lajula.app    | `https://lajula.app`            | lajula.app web service       |
 | Grafana       | `https://grafana.setiady.com`   | Log aggregation (Loki)       |
 
 **Laptop SSH config (`~/.ssh/config`):**

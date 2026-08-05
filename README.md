@@ -13,7 +13,7 @@ Docker Swarm homelab running on a single Intel NUC, managed via Portainer. All e
 | [`portainer-agent-stack.yml`](portainer-agent-stack.yml)                            | Container management UI              |
 | [`docker-compose.gitea.yaml`](docker-compose.gitea.yaml)                            | Self-hosted Git + container registry |
 | [`docker-compose.mailpit.yaml`](docker-compose.mailpit.yaml)                        | Shared SMTP mail catcher             |
-| [`docker-compose.lajula.app.yaml`](docker-compose.lajula.app.yaml)                  | lajula.app web service               |
+| [`docker-compose.lajuladotapp.yaml`](docker-compose.lajuladotapp.yaml)              | lajula.app web service               |
 | [`docker-compose.n8n.yaml`](docker-compose.n8n.yaml)                                | n8n workflow automation               |
 | [`docker-compose.sugarradar-staging.yaml`](docker-compose.sugarradar-staging.yaml)  | SugarRadar staging environment       |
 | [`docker-compose.sugarradar-production.yaml`](docker-compose.sugarradar-production.yaml) | SugarRadar production environment |

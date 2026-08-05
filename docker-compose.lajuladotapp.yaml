@@ -1,11 +1,13 @@
 services:
   app:
-    image: localhost:3000/lajuladotapp/lajula.app:0.0.8
+    image: localhost:3000/lajuladotapp/lajuladotapp:latest
     container_name: lajula.app
     restart: unless-stopped
+    ports:
+      - "8200:3000"
     networks:
       - shared-network
 
 networks:
   shared-network:
-    external: true
+  external: true
