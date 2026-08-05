@@ -208,6 +208,8 @@ Port range: **8200–8299**. The image is nginx and listens on container port `8
 
 Cloudflare route: `lajula.app` → `localhost:8200`
 
+> **Gotcha:** Docker's Swarm ingress mesh binds the IPv6 wildcard but does not route IPv6. `curl http://localhost:8200` resolves to `::1` first and hangs with 0 bytes; `curl http://127.0.0.1:8200` returns 200. This affects **every** published Swarm port on this host, not just lajula.app — use `127.0.0.1` when testing locally.
+
 ---
 
 ### 6. n8n (`docker-compose.n8n.yaml`)
