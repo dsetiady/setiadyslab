@@ -1,7 +1,7 @@
 services:
   app:
-    image: registry.setiady.com/lajuladotapp:v1.0.0
-    container_name: lajuladotapp
+    image: localhost:3000/lajuladotapp/lajula.app:0.0.8
+    container_name: lajula.app
     restart: unless-stopped
     networks:
       - shared-network
