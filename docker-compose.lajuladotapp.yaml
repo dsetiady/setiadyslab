@@ -1,7 +1,7 @@
 services:
   app:
     image: localhost:3000/lajuladotapp/lajuladotapp:latest
-    container_name: lajula.app
+    container_name: lajuladotapp
     restart: unless-stopped
     ports:
       - "8200:3000"
