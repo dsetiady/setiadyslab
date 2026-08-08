@@ -449,6 +449,57 @@ docker compose -f docker-compose.sugarradar-gh-runner.yaml down  # to stop
 
 The container is still visible in Portainer's "Containers" tab — you just can't manage the *stack* from Portainer.
 
+#### Known failure mode: crash loop after an ungraceful reboot
+
+The entrypoint clears `/actions-runner/.runner` and `.credentials*` before handing off
+to the image's `/entrypoint.sh`. Do not remove that `rm` — without it the runner
+crash-loops forever after any hard reboot.
+
+Why: `myoung34/github-runner`'s no-reuse path removes `.runner` but **not** the
+`.credentials` files, which is what `config.sh` actually checks. Its `deregister_runner`
+SIGTERM trap normally cleans these up on shutdown, so a clean stop is fine. But an
+ungraceful shutdown (power loss, or Docker's stop timeout killing it mid-deregistration)
+leaves `.credentials` in the container's writable layer. Since Docker *restarts* the
+existing container on boot rather than recreating it, that stale state survives and
+every start fails with:
+
+```
+Cannot configure the runner because it is already configured.
+An error occurred: Value cannot be null. (Parameter 'configuredSettings')
+```
+
+This exited 2 roughly once a minute (~1,440 restarts/day). Re-registration is safe to
+repeat — `config.sh` replaces a same-named runner. After a hard kill you may also see
+`A session for this runner already exists` / `Conflict. Retrying until reconnected`
+for a couple of minutes while GitHub's orphaned session expires; that is self-healing
+and needs no action.
+
+Symptoms to check if it recurs:
+
+```bash
+docker inspect sugarradar-gh-runner --format '{{.RestartCount}} {{.State.ExitCode}}'
+docker diff sugarradar-gh-runner | grep '/actions-runner/\.credentials'
+```
+
+#### Related: promtail positions-file growth
+
+A runner crash loop is amplified by promtail. Its config uses `docker_sd_configs`, and
+promtail never garbage-collects the `cursor-*` entries in `positions.yaml` — each
+crashed start mints a permanent one. The whole file is rewritten every 10s, so write
+volume and CPU grow with it (it reached 5.2 MB / 59,512 entries, ~524 KB/s of pure
+bookkeeping and 465 GB written). It regrows slowly on its own through normal container
+recreation. To reset:
+
+```bash
+docker service scale observability_observability-promtail=0
+docker run --rm -v observability_promtail-positions:/p alpine rm -f /p/positions.yaml /p/.positions.yaml*
+docker service scale observability_observability-promtail=1
+```
+
+Expect a brief burst of `entry too far behind` 400s from Loki afterwards — dropping the
+cursors makes targets replay from the start of their logs, and Loki's `reject_old_samples`
+window discards the old entries rather than duplicating them. It self-limits in seconds.
+
 ---
 
 ## Remote Access Summary

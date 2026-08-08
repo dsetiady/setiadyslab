@@ -18,10 +18,21 @@ services:
     # bind-mounted secret. The trailing "$$@" forwards the image's CMD
     # (./bin/Runner.Listener ...) so the listener actually starts after
     # registration.
+    #
+    # The leading `rm` clears stale registration state from the container's
+    # writable layer before /entrypoint.sh runs. Without it, any start that
+    # reuses an existing layer (i.e. every host reboot, since Docker restarts
+    # the container rather than recreating it) crash-loops forever with
+    # "Cannot configure the runner because it is already configured" / exit 2.
+    # The image's own no-reuse path only removes .runner and misses the
+    # .credentials files that config.sh actually checks; its deregister trap
+    # normally cleans these up, but an ungraceful shutdown leaves them behind.
+    # Re-registration is safe to repeat -- config.sh replaces a same-named
+    # runner ("A runner exists with the same name / Successfully replaced").
     entrypoint:
       - /bin/bash
       - -c
-      - export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh "$$@"
+      - rm -f /actions-runner/.runner /actions-runner/.credentials /actions-runner/.credentials_rsaparams && export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh "$$@"
       - bash
     # Compose's entrypoint override clears the image CMD, so re-declare it.
     command: ["./bin/Runner.Listener", "run", "--startuptype", "service"]
