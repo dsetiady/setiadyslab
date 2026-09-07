@@ -26,6 +26,7 @@ Docker Swarm stack definitions for a single-node Intel NUC homelab. Most stacks 
 - Secrets and env vars are set in Portainer — never committed to this repo
 - Glances runs as a standalone `docker run` (not a Swarm stack) due to `--pid host` and `--privileged` requirements
 - `sugarradar-gh-runner` runs as a standalone `docker compose up -d` (not a Swarm stack) because Swarm strips `device_cgroup_rules:`, which is required for `/dev/kvm` access on cgroup v2 hosts. Its PAT lives at `~/secrets/gh_runner_pat` (mode 0600) on the host, not in a swarm secret
+- The gh-runner container's lifecycle is owned by **systemd**, not by Docker's restart policy — units live in `systemd/`, installed with `sudo ./systemd/install.sh`. Manage it with `sudo systemctl restart sugarradar-gh-runner`, **never** `docker restart`: a restart reuses the dirty writable layer and reintroduces the stale-registration crash loop. A watchdog timer self-heals it every 2 minutes
 - Beszel: the **hub** runs as a Swarm stack (`docker-compose.beszel.yaml`), but the **agent** runs as a standalone `docker run` with `--network host` (Swarm ignores host networking). The hub reaches the agent via a `host.docker.internal:host-gateway` entry at port 45876
 
 ## Port range scheme

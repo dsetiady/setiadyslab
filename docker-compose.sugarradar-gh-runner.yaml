@@ -2,6 +2,14 @@
 # (NOT `docker stack deploy`). Swarm strips both `devices:` and
 # `device_cgroup_rules:`, so the runner can't get cgroup access to /dev/kvm
 # as a swarm service. See INFRASTRUCTURE.md for deployment steps.
+#
+# NOTE: this container is owned by systemd, not by Docker's restart policy
+# alone. `sugarradar-gh-runner.service` force-recreates it on every boot so it
+# always starts from a clean image layer, and a watchdog timer self-heals it if
+# it crash-loops. Install them from ./systemd/ -- see INFRASTRUCTURE.md.
+# Prefer `sudo systemctl restart sugarradar-gh-runner` over a bare
+# `docker restart`, which reuses the dirty layer and is what caused every
+# crash loop this stack has had.
 name: sugarradar-gh-runner
 
 services:
@@ -24,15 +32,25 @@ services:
     # reuses an existing layer (i.e. every host reboot, since Docker restarts
     # the container rather than recreating it) crash-loops forever with
     # "Cannot configure the runner because it is already configured" / exit 2.
-    # The image's own no-reuse path only removes .runner and misses the
-    # .credentials files that config.sh actually checks; its deregister trap
-    # normally cleans these up, but an ungraceful shutdown leaves them behind.
+    # The image's own no-reuse path only removes .runner (entrypoint.sh:51,243)
+    # and misses both the .credentials files and .runner_migrated; its deregister
+    # trap normally cleans these up, but an ungraceful shutdown leaves them behind.
+    # .runner_migrated matters on its own: IsConfigured() is true if EITHER
+    # .runner OR .runner_migrated exists, so leaving it while .runner is gone
+    # makes the runner think it is configured and then fail loading settings
+    # with "Value cannot be null. (Parameter 'configuredSettings')".
+    #
+    # The globs are deliberate. Enumerating individual filenames is what let this
+    # bug come back twice -- .credentials was missed first, then .runner_migrated.
+    # Match the whole registration-state family instead, so a new state file in a
+    # future runner release cannot reintroduce it. (.env / .path are NOT matched;
+    # they are config, not registration state.)
     # Re-registration is safe to repeat -- config.sh replaces a same-named
     # runner ("A runner exists with the same name / Successfully replaced").
     entrypoint:
       - /bin/bash
       - -c
-      - rm -f /actions-runner/.runner /actions-runner/.credentials /actions-runner/.credentials_rsaparams && export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh "$$@"
+      - rm -f /actions-runner/.runner* /actions-runner/.credentials* && export ACCESS_TOKEN="$$(cat /run/secrets/gh_runner_pat)" && exec /entrypoint.sh "$$@"
       - bash
     # Compose's entrypoint override clears the image CMD, so re-declare it.
     command: ["./bin/Runner.Listener", "run", "--startuptype", "service"]
@@ -42,7 +60,27 @@ services:
       - RUNNER_SCOPE=repo
       - LABELS=self-hosted,linux,kvm
       - RUNNER_WORKDIR=/runner-work
-      - DISABLE_AUTO_UPDATE=true
+    # DISABLE_AUTO_UPDATE is deliberately NOT set. entrypoint.sh tests it with
+    # `[ -n "$DISABLE_AUTO_UPDATE" ]`, so ANY value -- including "false" --
+    # disables self-update. It must be absent. With it set, the runner stayed
+    # pinned to whatever the image shipped until GitHub deprecated that version
+    # and it silently stopped receiving jobs:
+    #   "Runner version v2.334.0 is deprecated and cannot receive messages"
+    # Letting it self-update is what keeps that from recurring; the weekly
+    # maintenance timer re-pulls the image as a backstop.
+    # The listener writes a heartbeat to its _diag log while connected. A runner
+    # that is up but not actually receiving jobs (the deprecation case) looks
+    # identical to a healthy one in `docker ps` without this.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          grep -q 'Listening for Jobs' /actions-runner/_diag/Runner_*.log 2>/dev/null
+          && ! grep -q 'cannot receive messages' /actions-runner/_diag/Runner_*.log 2>/dev/null
+      interval: 60s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
     secrets:
       - gh_runner_pat
     volumes:

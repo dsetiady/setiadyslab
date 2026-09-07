@@ -449,37 +449,136 @@ docker compose -f docker-compose.sugarradar-gh-runner.yaml down  # to stop
 
 The container is still visible in Portainer's "Containers" tab — you just can't manage the *stack* from Portainer.
 
+#### Stability design: systemd owns the container, not Docker's restart policy
+
+Every crash loop this runner has had traces to one fact: **Docker *restarts* an
+existing container on boot, it does not recreate it.** A restart preserves the
+writable layer (stale `.runner`/`.credentials` registration state) and preserves
+network attachments (orphan `github_network_*` bridges). Both recurring bugs are
+symptoms of that single behaviour, which is why patching the `rm` list kept
+producing a new variant of the same failure.
+
+The fix is to make recreation the default. `systemd/` in this repo holds:
+
+| Unit | Cadence | Purpose |
+|------|---------|---------|
+| `sugarradar-gh-runner.service` | boot | `up -d --force-recreate` — clean layer, no stale state, no orphan networks. `ExecStop` runs `down` so the deregister trap unregisters cleanly. |
+| `sugarradar-gh-runner-watchdog.timer` | every 2 min | Detects and repairs a broken runner unattended. |
+| `sugarradar-gh-runner-maintenance.timer` | Sun 04:00 | Re-pulls the image (only recreates if it changed) and clears orphan networks. |
+
+Install or re-install after editing anything under `systemd/`:
+
+```bash
+sudo ./systemd/install.sh
+sudo systemctl start sugarradar-gh-runner   # hands the running container over (recreates it)
+```
+
+**Use `sudo systemctl restart sugarradar-gh-runner`, not `docker restart`.** A bare
+`docker restart` reuses the dirty layer and is precisely what triggers the crash loop.
+
+The watchdog handles the conditions that have actually occurred here — container
+missing, crash-looping, `already configured` in the logs, `cannot receive messages`
+(deprecated version → pulls before recreating), and an unhealthy healthcheck. It
+never recreates while a job is in flight, and a 15-minute cooldown stops a recreate
+storm: if the same fault recurs inside the cooldown it logs `NEEDS A HUMAN` and stops
+touching the container.
+
+```bash
+journalctl -u sugarradar-gh-runner-watchdog -f      # watch it
+systemctl list-timers 'sugarradar-*'                # confirm timers are armed
+```
+
+Why this matters: the Aug–Sep crash loop ran for roughly three weeks undetected
+because nothing watched the runner and no alert rules exist anywhere on this host.
+The watchdog closes that gap by repairing rather than paging.
+
 #### Known failure mode: crash loop after an ungraceful reboot
 
-The entrypoint clears `/actions-runner/.runner` and `.credentials*` before handing off
-to the image's `/entrypoint.sh`. Do not remove that `rm` — without it the runner
-crash-loops forever after any hard reboot.
+The entrypoint clears `/actions-runner/.runner*` and `.credentials*` before handing off
+to the image's `/entrypoint.sh`. Do not remove that `rm`, and keep it as globs — see the
+note below on why enumerating filenames kept failing. With the systemd units installed
+this is now defence-in-depth rather than the primary guard, since the container is
+recreated from a clean layer on every boot.
 
 Why: `myoung34/github-runner`'s no-reuse path removes `.runner` but **not** the
-`.credentials` files, which is what `config.sh` actually checks. Its `deregister_runner`
-SIGTERM trap normally cleans these up on shutdown, so a clean stop is fine. But an
-ungraceful shutdown (power loss, or Docker's stop timeout killing it mid-deregistration)
-leaves `.credentials` in the container's writable layer. Since Docker *restarts* the
-existing container on boot rather than recreating it, that stale state survives and
-every start fails with:
+`.credentials` files or `.runner_migrated`. Its `deregister_runner` SIGTERM trap normally
+cleans these up on shutdown, so a clean stop is fine. But an ungraceful shutdown (power
+loss, or Docker's stop timeout killing it mid-deregistration) leaves them in the
+container's writable layer. Since Docker *restarts* the existing container on boot rather
+than recreating it, that stale state survives and every start fails with:
 
 ```
 Cannot configure the runner because it is already configured.
 An error occurred: Value cannot be null. (Parameter 'configuredSettings')
 ```
 
-This exited 2 roughly once a minute (~1,440 restarts/day). Re-registration is safe to
-repeat — `config.sh` replaces a same-named runner. After a hard kill you may also see
-`A session for this runner already exists` / `Conflict. Retrying until reconnected`
-for a couple of minutes while GitHub's orphaned session expires; that is self-healing
-and needs no action.
+`.runner_migrated` matters on its own and is the easy one to miss: the runner's
+`IsConfigured()` is true if **either** `.runner` **or** `.runner_migrated` exists. Clearing
+only `.runner` therefore still trips the "already configured" branch, which then fails
+loading settings that are no longer there — the `configuredSettings` null above. An `rm`
+list that omits `.runner_migrated` looks correct and fixes nothing.
+
+This exited 2 roughly once a minute (~1,430 restarts/day, confirmed in Loki). Re-registration
+is safe to repeat — `config.sh` replaces a same-named runner. After a hard kill you may also
+see `A session for this runner already exists` / `Conflict. Retrying until reconnected` for a
+couple of minutes while GitHub's orphaned session expires; that is self-healing and needs no
+action.
 
 Symptoms to check if it recurs:
 
 ```bash
 docker inspect sugarradar-gh-runner --format '{{.RestartCount}} {{.State.ExitCode}}'
-docker diff sugarradar-gh-runner | grep '/actions-runner/\.credentials'
+docker diff sugarradar-gh-runner | grep -E '/actions-runner/\.(runner|runner_migrated|credentials)'
 ```
+
+#### Keep the runner image fresh — GitHub deprecates old runner versions
+
+`DISABLE_AUTO_UPDATE=true` pins the runner to whatever version is baked into the image, so a
+stale `myoung34/github-runner:latest` layer eventually stops working outright:
+
+```
+Current runner version: '2.334.0'
+An error occurred: Runner version v2.334.0 is deprecated and cannot receive messages.
+```
+
+This is a *second, independent* failure from the crash loop above — the runner registers,
+reaches `Listening for Jobs`, and then silently accepts no work. Fix by pulling and recreating:
+
+```bash
+docker pull myoung34/github-runner:latest
+docker compose -f docker-compose.sugarradar-gh-runner.yaml up -d --force-recreate
+```
+
+Because auto-update is disabled, this needs doing periodically — not just when something breaks.
+
+#### Thermal impact of the crash loop
+
+The crash loop is not only noisy, it cooks the CPU. Each restart runs a full `config.sh`
+(dotnet startup + RSA keygen + GitHub API calls), which is a short, intense, single-core
+burst about once a minute. Average CPU stays near-idle (~1.7%), so it hides from load-based
+alerting, but the package temperature does not hide:
+
+| Period                       | Package temp (avg) | Host CPU |
+|------------------------------|--------------------|----------|
+| Aug 8–15 (before)            | ~49 °C             | ~0.7 %   |
+| Aug 16 – Sep 7 (crash loop)  | ~86 °C, peaks 100 °C | ~1.5 %   |
+| After the fix                | ~52 °C             | ~1.3 %   |
+
+Sustained package throttling was real, not a sensor artifact — `package_throttle_count`
+reached ~966,000 events and ~15.5 h cumulative throttle time on a single boot. Both beszel
+and raw `hwmon` agreed on the readings.
+
+Watch it with:
+
+```bash
+grep . /sys/devices/system/cpu/cpu0/thermal_throttle/*
+for h in /sys/class/hwmon/hwmon*; do n=$(cat $h/name); for f in $h/temp*_label; do \
+  echo "$n $(cat $f) $(($(cat ${f%_label}_input)/1000))C"; done; done
+```
+
+Note the cores are an Intel Core Ultra 7 155H (ASUS NUC): `Package id 0` tracks the die hot
+spot, so it reads well above the per-core average during bursty loads. Judge health by the
+package figure and the throttle counters, not by average CPU%.
 
 #### Related: promtail positions-file growth
 

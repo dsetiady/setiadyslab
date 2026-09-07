@@ -1,0 +1,13 @@
+# Every 2 minutes. The Aug crash loop ran for ~3 weeks unnoticed; this catches
+# the same condition within a couple of minutes and repairs it unattended.
+[Unit]
+Description=Check the SugarRadar GitHub Actions runner every 2 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Unit=sugarradar-gh-runner-watchdog.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,30 @@
+# Owns the sugarradar-gh-runner container's lifecycle.
+#
+# The point of this unit is --force-recreate. Docker's own restart policy
+# RESTARTS the existing container on boot, which preserves the writable layer
+# (stale .runner/.credentials registration state -> crash loop) and preserves
+# network attachments (orphan github_network_* bridges). Recreating from the
+# image every boot makes both classes of bug structurally impossible.
+#
+# Install: see systemd/install.sh
+[Unit]
+Description=SugarRadar self-hosted GitHub Actions runner
+Documentation=file:///home/dennysetiady/setiadyslab/INFRASTRUCTURE.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/dennysetiady/setiadyslab
+# Clean layer every start.
+ExecStart=/usr/bin/docker compose -f docker-compose.sugarradar-gh-runner.yaml up -d --force-recreate
+# `down` lets the image's SIGTERM deregister_runner trap run, so the runner
+# unregisters from GitHub cleanly instead of leaving an orphaned session.
+ExecStop=/usr/bin/docker compose -f docker-compose.sugarradar-gh-runner.yaml down
+TimeoutStartSec=600
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

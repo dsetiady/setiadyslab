@@ -1,0 +1,9 @@
+[Unit]
+Description=Self-heal the SugarRadar GitHub Actions runner
+Documentation=file:///home/dennysetiady/setiadyslab/INFRASTRUCTURE.md
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/gh-runner-watchdog.sh

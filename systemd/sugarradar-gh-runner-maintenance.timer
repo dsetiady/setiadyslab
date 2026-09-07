@@ -1,0 +1,13 @@
+# Backstop for image drift, and keeps orphan github_network_* bridges from
+# accumulating (previously a manual script nobody remembered to run).
+[Unit]
+Description=Weekly maintenance for the SugarRadar GitHub Actions runner
+
+[Timer]
+OnCalendar=Sun 04:00
+Persistent=true
+RandomizedDelaySec=30min
+Unit=sugarradar-gh-runner-maintenance.service
+
+[Install]
+WantedBy=timers.target
