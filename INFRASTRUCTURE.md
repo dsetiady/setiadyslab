@@ -492,6 +492,43 @@ Why this matters: the Aug–Sep crash loop ran for roughly three weeks undetecte
 because nothing watched the runner and no alert rules exist anywhere on this host.
 The watchdog closes that gap by repairing rather than paging.
 
+#### Known failure mode: orphaned job networks hang downloads
+
+A finished Actions job leaves its `github_network_*` bridge behind with the runner
+still attached (`docker restart` preserves attachments, and nothing detaches them).
+This is not cosmetic. It leaves the runner **multi-homed**, and a later job's
+outbound connection can pick the dead bridge as its source address.
+
+Observed on 2026-09-07: `Integration Tests` finished at 17:07 leaving
+`github_network_a365…` (10.96.1.0/24) attached with only the runner on it. The next
+job's `actions/setup-java` step opened its JDK download from **10.96.1.4** — that
+orphan — got 2.1 MB of a 193 MB tarball, and the connection died. The socket sat in
+`FIN_WAIT2`, node sat in `ep_poll`, and because `setup-java` sets no read timeout the
+step hung for 51 minutes with zero CPU and would have run to the 6-hour job timeout.
+
+Meanwhile a plain `curl` of the same URL from the same container ran at 3.4 MB/s —
+general connectivity looks perfectly healthy while jobs hang, which is what makes
+this one hard to spot.
+
+Diagnosing a hung step:
+
+```bash
+# is it doing anything at all? (ticks not advancing == hung, not slow)
+docker exec sugarradar-gh-runner sh -c 'awk "{print \$14+\$15}" /proc/<pid>/stat'
+# what is it blocked on? decode local/remote addr and TCP state (05 == FIN_WAIT2)
+docker exec sugarradar-gh-runner sh -c 'ls -l /proc/<pid>/fd | grep socket'
+docker inspect sugarradar-gh-runner --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{$v.IPAddress}}
+{{end}}'
+```
+
+The runner should normally be attached to `sugarradar-gh-runner_default` **only**.
+Anything else while idle is an orphan. The watchdog now removes them every 2 minutes
+whenever no job is in flight — the idle guard matters, because a job that is still
+attaching its service containers briefly looks identical to an orphan.
+
+`cleanup-gh-runner-networks.sh` remains for manual use and is also run by the weekly
+maintenance timer.
+
 #### Known failure mode: crash loop after an ungraceful reboot
 
 The entrypoint clears `/actions-runner/.runner*` and `.credentials*` before handing off

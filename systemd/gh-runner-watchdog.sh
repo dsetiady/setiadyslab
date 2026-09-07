@@ -11,6 +11,13 @@
 #   3. "already configured" in logs       -> stale registration state, recreate
 #   4. "cannot receive messages"          -> runner version deprecated, pull + recreate
 #   5. healthcheck unhealthy              -> recreate
+#   6. orphaned github_network_* bridges  -> detach and remove (while idle)
+#
+# (6) is not housekeeping. A finished job leaves its bridge behind with the
+# runner still attached, which multi-homes the runner. A later job's outbound
+# download can then pick the dead bridge as its source address and stall
+# forever: observed as setup-java parked in ep_poll on a FIN_WAIT2 socket from
+# 10.96.1.4 (an orphan bridge) with a half-written tarball and no timeout.
 #
 # A recreate is skipped while a job is running, so CI is never killed mid-job.
 # A cooldown prevents a recreate storm when the fault is not self-healable; in
@@ -126,3 +133,24 @@ if [ "$health" = "unhealthy" ]; then
 fi
 
 log "OK: ${RUNNER} running (health=${health}, total restarts=${restarts}, +${delta} since last check)"
+
+# --- orphan network cleanup ------------------------------------------------
+# Only while idle. A job that is still starting can briefly have its bridge
+# attached to the runner alone, and removing it then would break that job.
+# When no job is in flight, a github_network_* holding only the runner is
+# unambiguously left over from a finished one.
+if job_running; then
+  exit 0
+fi
+
+orphans=0
+for net in $(docker network ls --filter name=github_network --format '{{.Name}}'); do
+  attached="$(docker network inspect "$net" --format '{{len .Containers}}' 2>/dev/null || echo 0)"
+  [ "$attached" = "1" ] || continue
+  docker network disconnect -f "$net" "$RUNNER" >/dev/null 2>&1
+  if docker network rm "$net" >/dev/null 2>&1; then
+    orphans=$(( orphans + 1 ))
+  fi
+done
+[ "$orphans" -gt 0 ] && log "  Removed ${orphans} orphaned github_network_* bridge(s)."
+exit 0
