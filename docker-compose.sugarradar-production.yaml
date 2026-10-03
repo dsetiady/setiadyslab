@@ -168,7 +168,7 @@ services:
     image: redis:7-alpine
     container_name: sugarradar-production-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly no
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
